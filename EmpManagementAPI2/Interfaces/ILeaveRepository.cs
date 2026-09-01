@@ -32,4 +32,6 @@ public interface ILeaveRepository
 
     Task<int?> GetEmployeeIdByAppUserIdAsync(
         int appUserId);
+
+    Task<bool> CancelLeaveAsync(int leaveId, int userId);
 }

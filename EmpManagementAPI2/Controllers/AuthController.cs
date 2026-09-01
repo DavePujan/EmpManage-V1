@@ -1,6 +1,8 @@
 ﻿using EmpManagementAPI2.DTOs.Auth;
 using EmpManagementAPI2.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EmpManagementAPI2.Controllers;
 
@@ -31,5 +33,29 @@ public class AuthController : ControllerBase
         {
             token = token
         });
+    }
+
+    [HttpPut("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(
+    ChangePasswordDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out int userId))
+        {
+            return Unauthorized("Invalid user identity.");
+        }
+
+        var result = await _authService
+            .ChangePasswordAsync(userId, dto);
+
+        if (!result)
+        {
+            return BadRequest(
+                "Password could not be changed. Check your current password and make sure the new passwords match.");
+        }
+
+        return Ok("Password changed successfully.");
     }
 }

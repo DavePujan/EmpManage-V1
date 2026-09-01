@@ -15,7 +15,9 @@ public class TeamRepository : ITeamRepository
         _context = context;
     }
 
-    public async Task<bool> CreateTeamAsync(CreateTeamDto dto)
+    // CREATE TEAM
+    public async Task<bool> CreateTeamAsync(
+        CreateTeamDto dto)
     {
         // Check whether department exists
         var departmentExists = await _context.Departments
@@ -37,7 +39,6 @@ public class TeamRepository : ITeamRepository
             return false;
         }
 
-        // Create Team
         var team = new Team
         {
             Name = dto.Name,
@@ -51,5 +52,81 @@ public class TeamRepository : ITeamRepository
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    // GET ALL TEAMS
+    public async Task<List<TeamListDto>> GetAllTeamsAsync()
+    {
+        return await _context.Teams
+            .Select(t => new TeamListDto
+            {
+                Id = t.Id,
+
+                Name = t.Name,
+
+                EmployeeCount = t.Employees.Count(),
+
+                TeamHead = t.TeamHeadEmployee != null
+                    ? t.TeamHeadEmployee.Name
+                    : "",
+
+                IsActive = t.IsActive
+            })
+            .ToListAsync();
+    }
+
+    // GET TEAM BY ID
+    public async Task<TeamDetailsDto?> GetTeamByIdAsync(
+        int id)
+    {
+        return await _context.Teams
+            .Where(t => t.Id == id)
+            .Select(t => new TeamDetailsDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+
+                DepartmentId = t.DepartmentId,
+
+                Department = t.Department.Name,
+
+                TeamHeadEmployeeId = t.TeamHeadEmployeeId,
+
+                TeamHead = t.TeamHeadEmployee != null
+                    ? t.TeamHeadEmployee.Name
+                    : "",
+
+                EmployeeCount = t.Employees.Count(),
+
+                IsActive = t.IsActive
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    // GET EMPLOYEES BY TEAM
+    public async Task<List<TeamEmployeeDto>> GetEmployeesByTeamAsync(
+        int teamId)
+    {
+        return await _context.Employees
+            .Where(e => e.TeamId == teamId)
+            .Select(e => new TeamEmployeeDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Email = e.Email,
+
+                Designation = e.EmployeeDesignations
+                    .Select(ed => ed.Designation.Name)
+                    .FirstOrDefault() ?? "",
+
+                IsActive = e.IsActive
+            })
+            .ToListAsync();
+    }
+
+    // GET TOTAL TEAM COUNT
+    public async Task<int> GetTeamCountAsync()
+    {
+        return await _context.Teams.CountAsync();
     }
 }

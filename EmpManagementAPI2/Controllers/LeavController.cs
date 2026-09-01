@@ -246,4 +246,28 @@ public class LeaveController : ControllerBase
         return await _leaveService.GetEmployeeIdByAppUserIdAsync(
             appUserId);
     }
+
+    // CANCEL LEAVE
+    [HttpPut("{id:int}/cancel")]
+    [Authorize]
+    public async Task<IActionResult> CancelLeave(int id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out int userId))
+        {
+            return Unauthorized("Invalid user identity.");
+        }
+
+        var result = await _leaveService
+            .CancelLeaveAsync(id, userId);
+
+        if (!result)
+        {
+            return BadRequest(
+                "Leave could not be cancelled. It may not exist, may not belong to you, or may no longer be pending.");
+        }
+
+        return Ok("Leave cancelled successfully.");
+    }
 }

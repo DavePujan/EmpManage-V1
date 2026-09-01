@@ -1,4 +1,5 @@
 ﻿using EmpManagementAPI2.Data;
+using EmpManagementAPI2.DTOs.Auth;
 using EmpManagementAPI2.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -103,5 +104,50 @@ public class AuthService : IAuthService
         // Convert JWT object to string
         return new JwtSecurityTokenHandler()
             .WriteToken(token);
+    }
+
+    public async Task<bool> ChangePasswordAsync(
+    int userId,
+    ChangePasswordDto dto)
+    {
+        // Check whether new password and confirm password match
+        if (dto.NewPassword != dto.ConfirmPassword)
+        {
+            return false;
+        }
+
+        // Find the user
+        var user = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return false;
+        }
+
+        // Check whether current password is correct
+        var passwordValid = _passwordService.VerifyPassword(
+            dto.CurrentPassword,
+            user.PasswordHash,
+            user.PasswordSalt);
+
+        if (!passwordValid)
+        {
+            return false;
+        }
+
+        // Create hash and salt for new password
+        _passwordService.CreatePasswordHash(
+            dto.NewPassword,
+            out byte[] newPasswordHash,
+            out byte[] newPasswordSalt);
+
+        // Update password
+        user.PasswordHash = newPasswordHash;
+        user.PasswordSalt = newPasswordSalt;
+
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 }

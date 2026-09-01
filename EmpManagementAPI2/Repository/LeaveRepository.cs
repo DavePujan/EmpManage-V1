@@ -299,4 +299,39 @@ public class LeaveRepository : ILeaveRepository
             .Select(e => (int?)e.Id)
             .FirstOrDefaultAsync();
     }
+
+
+    // CANCEL LEAVE
+    public async Task<bool> CancelLeaveAsync(
+        int leaveId,
+        int userId)
+    {
+        var leave = await _context.LeaveRequests
+            .Include(l => l.Employee)
+            .FirstOrDefaultAsync(l => l.Id == leaveId);
+
+        if (leave == null)
+        {
+            return false;
+        }
+
+        // Make sure this leave belongs to the logged-in employee
+        if (leave.Employee.AppUserId != userId)
+        {
+            return false;
+        }
+
+        // Only pending leave can be cancelled
+        if (leave.Status != "Pending")
+        {
+            return false;
+        }
+
+        // Change status
+        leave.Status = "Cancelled";
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
 }

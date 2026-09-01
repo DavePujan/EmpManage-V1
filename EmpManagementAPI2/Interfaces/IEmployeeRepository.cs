@@ -9,4 +9,24 @@ public interface IEmployeeRepository
         string temporaryPassword);
 
     Task<List<EmployeeListDto>> GetAllEmployeesAsync();
+
+    Task<EmployeeListDto?> GetEmployeeByIdAsync(int id);
+
+    Task<bool> UpdateEmployeeAsync(
+        int id,
+        UpdateEmployeeDto dto);
+
+    Task<bool> DeleteEmployeeAsync(int id);
+
+    Task<int> GetEmployeeCountAsync();
+
+    Task<bool> UpdateEmployeeStatusAsync(
+       int id,
+       UpdateEmployeeStatusDto dto);
+
+    Task<EmployeeListDto?> GetMyProfileAsync(int userId);
+
+    Task<bool> UpdateMyProfileAsync(
+    int userId,
+    UpdateMyProfileDto dto);
 }

@@ -19,6 +19,7 @@ public class EmployeeRepository : IEmployeeRepository
         _passwordService = passwordService;
     }
 
+    // CREATE EMPLOYEE
     public async Task<bool> CreateEmployeeAsync(
         CreateEmployeeDto dto,
         string temporaryPassword)
@@ -150,6 +151,8 @@ public class EmployeeRepository : IEmployeeRepository
 
         return true;
     }
+
+    // GET ALL EMPLOYEES
     public async Task<List<EmployeeListDto>> GetAllEmployeesAsync()
     {
         return await _context.Employees
@@ -183,5 +186,284 @@ public class EmployeeRepository : IEmployeeRepository
                 IsActive = e.IsActive
             })
             .ToListAsync();
+    }
+
+    // GET EMPLOYEE BY ID
+    public async Task<EmployeeListDto?> GetEmployeeByIdAsync(int id)
+    {
+        return await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Team)
+            .Include(e => e.Supervisor)
+            .Include(e => e.EmployeeDesignations)
+                .ThenInclude(ed => ed.Designation)
+            .Where(e => e.Id == id)
+            .Select(e => new EmployeeListDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Email = e.Email,
+
+                Department = e.Department != null
+                    ? e.Department.Name
+                    : "",
+
+                Team = e.Team != null
+                    ? e.Team.Name
+                    : "",
+
+                Designation = e.EmployeeDesignations
+                    .Select(ed => ed.Designation.Name)
+                    .FirstOrDefault() ?? "",
+
+                Supervisor = e.Supervisor != null
+                    ? e.Supervisor.Name
+                    : "",
+
+                IsActive = e.IsActive
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    // UPDATE EMPLOYEE
+    public async Task<bool> UpdateEmployeeAsync(
+        int id,
+        UpdateEmployeeDto dto)
+    {
+        var employee = await _context.Employees
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (employee == null)
+        {
+            return false;
+        }
+
+        // Check whether email is already used by another user
+        var emailExists = await _context.AppUsers
+            .AnyAsync(u =>
+                u.Email == dto.Email &&
+                u.Id != employee.AppUserId);
+
+        if (emailExists)
+        {
+            return false;
+        }
+
+        // Check department
+        if (dto.DepartmentId.HasValue)
+        {
+            var departmentExists = await _context.Departments
+                .AnyAsync(d => d.Id == dto.DepartmentId.Value);
+
+            if (!departmentExists)
+            {
+                return false;
+            }
+        }
+
+        // Check team
+        if (dto.TeamId.HasValue)
+        {
+            var team = await _context.Teams
+                .FirstOrDefaultAsync(t => t.Id == dto.TeamId.Value);
+
+            if (team == null)
+            {
+                return false;
+            }
+
+            // Make sure team belongs to selected department
+            if (dto.DepartmentId.HasValue &&
+                team.DepartmentId != dto.DepartmentId.Value)
+            {
+                return false;
+            }
+        }
+
+        // Check designation
+        var designationExists = await _context.Designations
+            .AnyAsync(d => d.Id == dto.DesignationId);
+
+        if (!designationExists)
+        {
+            return false;
+        }
+
+        // Update Employee
+        employee.Name = dto.Name;
+        employee.Email = dto.Email;
+        employee.DepartmentId = dto.DepartmentId;
+        employee.TeamId = dto.TeamId;
+        employee.SupervisorId = dto.SupervisorId;
+
+        // Update AppUser email
+        var appUser = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
+
+        if (appUser != null)
+        {
+            appUser.Email = dto.Email;
+        }
+
+        // Update designation
+        var employeeDesignation = await _context.EmployeeDesignations
+            .FirstOrDefaultAsync(ed => ed.EmployeeId == employee.Id);
+
+        if (employeeDesignation != null)
+        {
+            employeeDesignation.DesignationId = dto.DesignationId;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    // DELETE EMPLOYEE
+    public async Task<bool> DeleteEmployeeAsync(int id)
+    {
+        var employee = await _context.Employees
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (employee == null)
+        {
+            return false;
+        }
+
+        var appUser = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
+
+        var employeeDesignation = await _context.EmployeeDesignations
+            .Where(ed => ed.EmployeeId == employee.Id)
+            .ToListAsync();
+
+        _context.EmployeeDesignations.RemoveRange(employeeDesignation);
+
+        _context.Employees.Remove(employee);
+
+        if (appUser != null)
+        {
+            _context.AppUsers.Remove(appUser);
+        }
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    // GET EMPLOYEE COUNT
+    public async Task<int> GetEmployeeCountAsync()
+    {
+        return await _context.Employees
+            .CountAsync(e => e.IsActive);
+    }
+
+    // UPDATE EMPLOYEE STATUS
+    public async Task<bool> UpdateEmployeeStatusAsync(
+        int id,
+        UpdateEmployeeStatusDto dto)
+    {
+        var employee = await _context.Employees
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (employee == null)
+        {
+            return false;
+        }
+
+        employee.IsActive = dto.IsActive;
+
+        var appUser = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
+
+        if (appUser != null)
+        {
+            appUser.IsActive = dto.IsActive;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return true;
+
+    }
+    public async Task<EmployeeListDto?> GetMyProfileAsync(int userId)
+    {
+        return await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Team)
+            .Include(e => e.Supervisor)
+            .Include(e => e.EmployeeDesignations)
+                .ThenInclude(ed => ed.Designation)
+            .Where(e => e.AppUserId == userId)
+            .Select(e => new EmployeeListDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Email = e.Email,
+
+                Department = e.Department != null
+                    ? e.Department.Name
+                    : "",
+
+                Team = e.Team != null
+                    ? e.Team.Name
+                    : "",
+
+                Designation = e.EmployeeDesignations
+                    .Select(ed => ed.Designation.Name)
+                    .FirstOrDefault() ?? "",
+
+                Supervisor = e.Supervisor != null
+                    ? e.Supervisor.Name
+                    : "",
+
+                IsActive = e.IsActive
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> UpdateMyProfileAsync(
+    int userId,
+    UpdateMyProfileDto dto)
+    {
+        // Find the employee using the logged-in user's ID
+        var employee = await _context.Employees
+            .FirstOrDefaultAsync(e => e.AppUserId == userId);
+
+        if (employee == null)
+        {
+            return false;
+        }
+
+        // Check whether another user already has this email
+        var emailExists = await _context.AppUsers
+            .AnyAsync(u =>
+                u.Email == dto.Email &&
+                u.Id != userId);
+
+        if (emailExists)
+        {
+            return false;
+        }
+
+        // Find the related AppUser
+        var appUser = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (appUser == null)
+        {
+            return false;
+        }
+
+        // Update employee information
+        employee.Name = dto.Name;
+        employee.Email = dto.Email;
+
+        // Keep AppUser email synchronized
+        appUser.Email = dto.Email;
+
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 }

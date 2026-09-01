@@ -125,4 +125,13 @@ public class LeaveService : ILeaveService
         return await _leaveRepository
             .GetEmployeeIdByAppUserIdAsync(appUserId);
     }
+
+    // CANCEL LEAVE
+    public async Task<bool> CancelLeaveAsync(
+        int leaveId,
+        int userId)
+    {
+        return await _leaveRepository
+            .CancelLeaveAsync(leaveId, userId);
+    }
 }
