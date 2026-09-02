@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using EmpManagementAPI2.Data;
 using EmpManagementAPI2.DTOs.Leave;
@@ -317,17 +317,25 @@ public class EmailService : IEmailService
 
         message.IsBodyHtml = true;
 
-        using var smtpClient = new SmtpClient(
-            smtpServer,
-            port);
+        try
+        {
+            using var smtpClient = new SmtpClient(
+                smtpServer,
+                port);
 
-        smtpClient.EnableSsl = true;
+            smtpClient.EnableSsl = true;
 
-        smtpClient.Credentials =
-            new NetworkCredential(
-                username,
-                password);
+            smtpClient.Credentials =
+                new NetworkCredential(
+                    username,
+                    password);
 
-        await smtpClient.SendMailAsync(message);
+            await smtpClient.SendMailAsync(message);
+        }
+        catch (Exception ex)
+        {
+            // Log warning and allow the business transaction to succeed during development
+            Console.WriteLine($"[EmailService Warning] Failed to send email to {receiverEmail}: {ex.Message}");
+        }
     }
 }

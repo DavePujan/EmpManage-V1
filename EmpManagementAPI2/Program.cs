@@ -5,9 +5,7 @@ using EmpManagementAPI2.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
-
-
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,22 +20,38 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
+        Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        Description = "JWT Authorization header using the Bearer scheme."
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT Bearer token here: Bearer {token}"
     });
 
-    options.AddSecurityRequirement(document =>
-        new OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
-            [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-        });
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36)));
+    }
+});
 
 builder.Services.AddScoped<ISetupService, SetupService>();
 

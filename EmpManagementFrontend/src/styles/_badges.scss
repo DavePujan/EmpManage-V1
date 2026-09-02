@@ -1,0 +1,95 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  white-space: nowrap;
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background-color: currentColor;
+  }
+
+  // Active / Inactive
+  &.badge-active {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    border-color: var(--color-success-border);
+  }
+
+  &.badge-inactive {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    border-color: var(--color-danger-border);
+  }
+
+  // Leave Statuses
+  &.badge-pending {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border-color: var(--color-warning-border);
+  }
+
+  &.badge-approved {
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+    border-color: var(--color-success-border);
+  }
+
+  &.badge-rejected {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    border-color: var(--color-danger-border);
+  }
+
+  &.badge-cancelled {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+  }
+
+  // Roles
+  &.badge-role-admin {
+    background-color: var(--color-role-admin-bg);
+    color: var(--color-role-admin-text);
+    border-color: var(--color-role-admin-border);
+  }
+
+  &.badge-role-hr {
+    background-color: var(--color-role-hr-bg);
+    color: var(--color-role-hr-text);
+    border-color: var(--color-role-hr-border);
+  }
+
+  &.badge-role-manager {
+    background-color: var(--color-role-manager-bg);
+    color: var(--color-role-manager-text);
+    border-color: var(--color-role-manager-border);
+  }
+
+  &.badge-role-employee {
+    background-color: var(--color-role-employee-bg);
+    color: var(--color-role-employee-text);
+    border-color: var(--color-role-employee-border);
+  }
+
+  // Pill / Soft Neutrals
+  &.badge-neutral {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+  }
+
+  &.badge-primary {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    border-color: var(--color-primary-border);
+  }
+}
