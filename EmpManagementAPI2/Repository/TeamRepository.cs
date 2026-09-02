@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.Data;
+using EmpManagementAPI2.Data;
 using EmpManagementAPI2.DTOs.Team;
 using EmpManagementAPI2.Interfaces;
 using EmpManagementAPI2.Models;
@@ -63,6 +63,10 @@ public class TeamRepository : ITeamRepository
                 Id = t.Id,
 
                 Name = t.Name,
+
+                DepartmentId = t.DepartmentId,
+
+                Department = t.Department.Name,
 
                 EmployeeCount = t.Employees.Count(),
 

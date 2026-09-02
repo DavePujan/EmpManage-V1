@@ -100,7 +100,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
               label="Designations"
               [value]="stats.totalDesignations"
               icon="award"
-              colorVariant="success"
+              colorVariant="tertiary"
               meta="Job titles & roles"
             ></app-stat-card>
           }

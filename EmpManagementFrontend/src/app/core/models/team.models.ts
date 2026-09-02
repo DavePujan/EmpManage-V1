@@ -1,6 +1,8 @@
 export interface TeamListItem {
   id: number;
   name: string;
+  departmentId?: number;
+  department?: string;
   employeeCount: number;
   teamHead: string;
   isActive: boolean;
