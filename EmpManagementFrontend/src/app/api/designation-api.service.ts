@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CreateDesignationRequest } from '../core/models/designation.models';
+import { CreateDesignationRequest, DesignationItem } from '../core/models/designation.models';
 
 @Injectable({
   providedIn: 'root'
@@ -13,5 +13,9 @@ export class DesignationApiService {
 
   create(dto: CreateDesignationRequest): Observable<string> {
     return this.http.post(`${this.baseUrl}`, dto, { responseType: 'text' });
+  }
+
+  getAll(): Observable<DesignationItem[]> {
+    return this.http.get<DesignationItem[]>(`${this.baseUrl}`);
   }
 }

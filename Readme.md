@@ -97,19 +97,27 @@ npm start
 
 ---
 
-## 🔑 Seeded Login Credentials
+### Database Scripts:
+- **MySQL 8.0+**: Execute [`EmpManagementAPI2/mysql_script.sql`](file:///e:/z_projects/EmployeeManagement-PP/EmpManagementAPI2/mysql_script.sql) in MySQL Workbench or phpMyAdmin.
+- **SQL Server**: Execute [`EmpManagementAPI2/script.sql`](file:///e:/z_projects/EmployeeManagement-PP/EmpManagementAPI2/script.sql) or [`script (1).sql`](file:///e:/z_projects/EmployeeManagement-PP/script%20(1).sql) in SSMS / Azure Data Studio.
 
-Once both servers are running, open your browser to **`http://localhost:4200`** and log in with any of the following 5 user accounts:
+---
 
-| Role | Username | Password | Full Name | Department / Team |
-| :--- | :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `AdminPassword123!` | System Administrator | Software Engineering / Core Backend Team |
-| **HR** | `sarah_hr` | `HrPassword123!` | Sarah Jenkins | Human Resources / People Operations |
-| **Manager** | `michael_mgr` | `ManagerPassword123!` | Michael Scott | Software Engineering / Core Backend Team *(Team Head)* |
-| **Employee** | `john_doe` | `EmployeePassword123!` | John Doe | Software Engineering / Core Backend Team |
-| **Employee** | `emily_dev` | `EmployeePassword123!` | Emily Davis | Software Engineering / Core Backend Team |
+## 🔑 Seeded User Accounts
 
-*(For full details, capabilities, and supervisor assignments, see [`credential.md`](file:///e:/z_projects/EmployeeManagement-PP/credential.md).)*
+Once the database is initialized and both servers are running, log in with any of the accounts below:
+
+| Role | Username | Full Name | Department / Team |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `Priyanka` | system admin | *Organization Admin* |
+| **HR** | `parth` | parth patel | HR / Recruitment Team |
+| **HR** | `priya` | priya parmar | HR / Payroll Team |
+| **Employee** | `pujan` | pujan dave | IT / Backend Team |
+| **Employee** | `mansi` | mansi chauhan | Customer Support / Customer Service Team |
+| **Employee** | `khushi` | khushi bhimani | IT / Backend Team |
+| **Employee** | `riya` | riya maru | Customer Support / Customer Service Team |
+
+*(For full details, profiles, and supervisor hierarchies, see [`credential.md`](file:///e:/z_projects/EmployeeManagement-PP/credential.md).)*
 
 ---
 

@@ -2,7 +2,6 @@ import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DesignationApiService } from '../../../api/designation-api.service';
-import { EmployeeApiService } from '../../../api/employee-api.service';
 import { DesignationItem } from '../../../core/models/designation.models';
 import { AuthStateService } from '../../../core/services/auth-state.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -25,8 +24,8 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
       <!-- Page Header -->
       <div class="page-header">
         <div class="page-title-group">
-          <h1 class="page-title">Designations</h1>
-          <p class="page-description">Organizational job titles, responsibilities, and seniority levels.</p>
+          <h1 class="page-title">Designations Catalog</h1>
+          <p class="page-description">Organizational job titles, role descriptions, and workforce assignments ({{ designations.length }} total titles).</p>
         </div>
 
         @if (authState.isAdmin()) {
@@ -43,7 +42,7 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
       <div class="toolbar">
         <div class="toolbar-search">
           <app-search-input
-            placeholder="Search designations..."
+            placeholder="Search designations by title or scope..."
             (searchChange)="onSearch($event)"
           ></app-search-input>
         </div>
@@ -61,8 +60,8 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
           <div style="padding: 32px 16px;">
             <app-empty-state
               icon="award"
-              title="No designations recorded"
-              description="Define company job roles such as Software Engineer, HR Specialist, etc."
+              title="No designations found"
+              description="No job titles match your search criteria."
               [actionLabel]="authState.isAdmin() ? 'Add Designation' : ''"
               actionIcon="plus"
               (action)="isCreateModalOpen = true"
@@ -73,23 +72,33 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
             <table class="data-table">
               <thead>
                 <tr>
+                  <th style="width: 60px;">ID</th>
                   <th>Job Title / Designation</th>
                   <th>Description</th>
+                  <th style="width: 140px; text-align: center;">Assigned Staff</th>
                 </tr>
               </thead>
               <tbody>
                 @for (item of filteredDesignations; track item.id) {
                   <tr>
+                    <td class="text-muted font-mono font-medium">#{{ item.id }}</td>
                     <td>
                       <div class="flex items-center gap-3">
                         <div class="desig-badge-icon">
                           <app-icon name="award" [size]="18"></app-icon>
                         </div>
-                        <span class="font-semibold">{{ item.name }}</span>
+                        <div>
+                          <span class="font-semibold">{{ item.name }}</span>
+                        </div>
                       </div>
                     </td>
                     <td>
-                      <span class="text-secondary">{{ item.description || 'Standard job role.' }}</span>
+                      <span class="text-secondary">{{ item.description || 'Standard organizational job role.' }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                      <span class="staff-count-badge" [class.has-staff]="(item.employeeCount || 0) > 0">
+                        {{ item.employeeCount || 0 }} {{ (item.employeeCount === 1) ? 'member' : 'members' }}
+                      </span>
                     </td>
                   </tr>
                 }
@@ -119,7 +128,7 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
                   type="text"
                   class="form-control"
                   formControlName="name"
-                  placeholder="e.g. Senior Software Engineer"
+                  placeholder="e.g. Senior Cloud Architect"
                 />
               </div>
 
@@ -129,7 +138,7 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
                   id="desig-desc"
                   class="form-control"
                   formControlName="description"
-                  placeholder="Describe scope and requirements..."
+                  placeholder="Describe role scope and responsibilities..."
                 ></textarea>
               </div>
             </div>
@@ -161,6 +170,25 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
       flex-shrink: 0;
     }
 
+    .staff-count-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-bg-secondary, #F1F5F9);
+      color: var(--color-text-muted);
+
+      &.has-staff {
+        background-color: var(--color-primary-soft);
+        color: var(--color-primary);
+      }
+    }
+
+    .font-mono {
+      font-family: monospace;
+    }
+
     .spin {
       animation: spin 1s linear infinite;
     }
@@ -173,7 +201,6 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
 export class DesignationListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private designationApi = inject(DesignationApiService);
-  private employeeApi = inject(EmployeeApiService);
   private toast = inject(ToastService);
   private cdr = inject(ChangeDetectorRef);
   authState = inject(AuthStateService);
@@ -197,31 +224,8 @@ export class DesignationListComponent implements OnInit {
   loadDesignations(): void {
     this.isLoading = true;
 
-    // Aggregate unique designations from employees and defaults
-    this.employeeApi.getAll().subscribe({
-      next: (emps) => {
-        const uniqueTitles = new Set<string>();
-        const list: DesignationItem[] = [];
-
-        // Known default if any
-        uniqueTitles.add('Software Developer');
-        list.push({
-          id: 1,
-          name: 'Software Developer',
-          description: 'Develops REST APIs and database applications'
-        });
-
-        emps.forEach((emp, idx) => {
-          if (emp.designation && !uniqueTitles.has(emp.designation)) {
-            uniqueTitles.add(emp.designation);
-            list.push({
-              id: idx + 2,
-              name: emp.designation,
-              description: 'Operational team role'
-            });
-          }
-        });
-
+    this.designationApi.getAll().subscribe({
+      next: (list) => {
         this.designations = list;
         this.filteredDesignations = list;
         this.isLoading = false;
@@ -241,7 +245,7 @@ export class DesignationListComponent implements OnInit {
       return;
     }
     this.filteredDesignations = this.designations.filter(d =>
-      d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)
+      d.name.toLowerCase().includes(q) || (d.description && d.description.toLowerCase().includes(q))
     );
   }
 
@@ -256,15 +260,9 @@ export class DesignationListComponent implements OnInit {
       next: () => {
         this.isSubmitting = false;
         this.isCreateModalOpen = false;
-        const newDesig: DesignationItem = {
-          id: this.designations.length + 1,
-          name: this.createForm.value.name,
-          description: this.createForm.value.description
-        };
-        this.designations.push(newDesig);
-        this.filteredDesignations = [...this.designations];
         this.createForm.reset();
         this.toast.success('Designation created successfully!');
+        this.loadDesignations();
       },
       error: () => {
         this.isSubmitting = false;

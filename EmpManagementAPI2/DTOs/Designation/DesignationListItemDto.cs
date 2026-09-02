@@ -1,0 +1,10 @@
+namespace EmpManagementAPI2.DTOs.Designation;
+
+public class DesignationListItemDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public int EmployeeCount { get; set; }
+}

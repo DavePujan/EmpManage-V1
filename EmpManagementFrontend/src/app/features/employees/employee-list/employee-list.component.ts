@@ -5,9 +5,11 @@ import { ActivatedRoute } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { DepartmentApiService } from '../../../api/department-api.service';
+import { DesignationApiService } from '../../../api/designation-api.service';
 import { EmployeeApiService } from '../../../api/employee-api.service';
 import { TeamApiService } from '../../../api/team-api.service';
 import { DepartmentListItem } from '../../../core/models/department.models';
+import { DesignationItem } from '../../../core/models/designation.models';
 import { TeamListItem } from '../../../core/models/team.models';
 import { EmployeeListItem } from '../../../core/models/user.models';
 import { AuthStateService } from '../../../core/services/auth-state.service';
@@ -39,7 +41,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
       <div class="page-header">
         <div class="page-title-group">
           <h1 class="page-title">Employees Directory</h1>
-          <p class="page-description">Manage staff profiles, department assignments, and organizational roles.</p>
+          <p class="page-description">Manage staff profiles, department assignments, designations, and supervisory hierarchy.</p>
         </div>
 
         @if (authState.isAdmin()) {
@@ -56,17 +58,33 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
       <div class="toolbar">
         <div class="toolbar-search">
           <app-search-input
-            placeholder="Search by name, email, department..."
+            placeholder="Search by name, email, department, designation..."
             (searchChange)="onSearch($event)"
           ></app-search-input>
         </div>
 
         <div class="toolbar-filters">
           <!-- Department Filter -->
-          <select class="form-select form-select-sm" [(ngModel)]="selectedDepartmentFilter" (change)="applyFilters()">
-            <option value="">All Departments</option>
+          <select class="form-select form-select-sm" [(ngModel)]="selectedDepartmentFilter" (change)="onDepartmentFilterChange()">
+            <option value="">All Departments ({{ departments.length }})</option>
             @for (dept of departments; track dept.id) {
               <option [value]="dept.name">{{ dept.name }}</option>
+            }
+          </select>
+
+          <!-- Team Filter -->
+          <select class="form-select form-select-sm" [(ngModel)]="selectedTeamFilter" (change)="applyFilters()">
+            <option value="">All Teams ({{ allTeams.length }})</option>
+            @for (team of filteredTeamsForFilter; track team.id) {
+              <option [value]="team.name">{{ team.name }}</option>
+            }
+          </select>
+
+          <!-- Designation Filter -->
+          <select class="form-select form-select-sm" [(ngModel)]="selectedDesignationFilter" (change)="applyFilters()">
+            <option value="">All Designations ({{ designations.length }})</option>
+            @for (desig of designations; track desig.id) {
+              <option [value]="desig.name">{{ desig.name }}</option>
             }
           </select>
 
@@ -77,6 +95,19 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             <option value="inactive">Inactive Only</option>
           </select>
         </div>
+      </div>
+
+      <!-- Quick Filter Bar / Results Counter -->
+      <div class="filter-status-bar">
+        <span class="results-text">
+          Showing <strong>{{ filteredEmployees.length }}</strong> of <strong>{{ allEmployees.length }}</strong> employees
+        </span>
+        @if (hasActiveFilters()) {
+          <button class="btn btn-ghost btn-xs text-primary" (click)="clearFilters()">
+            <app-icon name="refresh" [size]="12"></app-icon>
+            <span>Reset Filters</span>
+          </button>
+        }
       </div>
 
       <!-- Data Table Card -->
@@ -125,9 +156,13 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                         </div>
                       </div>
                     </td>
-                    <td>{{ emp.department || '—' }}</td>
+                    <td>
+                      <span class="badge badge-dept">{{ emp.department || '—' }}</span>
+                    </td>
                     <td>{{ emp.team || '—' }}</td>
-                    <td>{{ emp.designation || '—' }}</td>
+                    <td>
+                      <span class="font-medium text-dark">{{ emp.designation || '—' }}</span>
+                    </td>
                     <td>{{ emp.supervisor || '—' }}</td>
                     <td>
                       <app-status-badge [status]="emp.isActive"></app-status-badge>
@@ -148,14 +183,14 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                           <!-- Toggle Status -->
                           <button
                             class="btn btn-icon btn-ghost btn-icon-sm"
-                            (click)="toggleStatus(emp)"
                             [title]="emp.isActive ? 'Deactivate Employee' : 'Activate Employee'"
+                            (click)="toggleStatus(emp)"
                           >
-                            <app-icon [name]="emp.isActive ? 'x' : 'check'" [size]="16" [customClass]="emp.isActive ? 'text-danger' : 'text-success'"></app-icon>
+                            <app-icon [name]="emp.isActive ? 'lock' : 'check'" [size]="16"></app-icon>
                           </button>
 
                           <!-- Delete -->
-                          <button class="btn btn-icon btn-ghost btn-icon-sm text-danger" (click)="confirmDelete(emp)" title="Delete Employee">
+                          <button class="btn btn-icon btn-ghost btn-icon-sm text-danger" (click)="openDeleteDialog(emp)" title="Delete Employee">
                             <app-icon name="trash" [size]="16"></app-icon>
                           </button>
                         }
@@ -167,31 +202,30 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             </table>
           </div>
 
-          <!-- Pagination Footer -->
-          <div class="table-footer">
-            <span class="table-info">
-              Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredEmployees.length) }} of {{ filteredEmployees.length }} employees
-            </span>
+          <!-- Pagination -->
+          @if (totalPages > 1) {
             <div class="pagination">
-              <button
-                class="btn btn-outline btn-sm btn-icon"
-                [disabled]="currentPage === 1"
-                (click)="currentPage = currentPage - 1"
-              >
-                <app-icon name="chevron-left" [size]="16"></app-icon>
-              </button>
-              <span style="font-size: 13px; font-weight: 600; padding: 0 8px;">
-                {{ currentPage }} / {{ totalPages }}
+              <span class="page-info">
+                Page {{ currentPage }} of {{ totalPages }} ({{ filteredEmployees.length }} records)
               </span>
-              <button
-                class="btn btn-outline btn-sm btn-icon"
-                [disabled]="currentPage === totalPages || totalPages === 0"
-                (click)="currentPage = currentPage + 1"
-              >
-                <app-icon name="chevron-right" [size]="16"></app-icon>
-              </button>
+              <div class="page-buttons">
+                <button
+                  class="btn btn-outline btn-sm"
+                  [disabled]="currentPage === 1"
+                  (click)="currentPage = currentPage - 1"
+                >
+                  Previous
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  [disabled]="currentPage === totalPages"
+                  (click)="currentPage = currentPage + 1"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
+          }
         }
       </div>
     </div>
@@ -201,7 +235,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
       <div class="modal-backdrop" (click)="isAddModalOpen = false">
         <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3 class="modal-title">Register New Employee</h3>
+            <h3 class="modal-title">Add New Employee</h3>
             <button class="btn btn-icon btn-ghost" (click)="isAddModalOpen = false">
               <app-icon name="x" [size]="18"></app-icon>
             </button>
@@ -212,36 +246,45 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                 <!-- Full Name -->
                 <div class="form-group">
                   <label for="emp-name">Full Name <span class="required">*</span></label>
-                  <input id="emp-name" type="text" class="form-control" formControlName="name" placeholder="John Doe" />
+                  <input id="emp-name" type="text" class="form-control" formControlName="name" placeholder="e.g. John Doe" />
+                  @if (addForm.get('name')?.invalid && addForm.get('name')?.touched) {
+                    <span class="form-error">Full name is required.</span>
+                  }
                 </div>
 
                 <!-- Username -->
                 <div class="form-group">
-                  <label for="emp-username">Username <span class="required">*</span></label>
-                  <input id="emp-username" type="text" class="form-control" formControlName="username" placeholder="john_doe" />
+                  <label for="emp-user">Username <span class="required">*</span></label>
+                  <input id="emp-user" type="text" class="form-control" formControlName="username" placeholder="e.g. jdoe" />
+                  @if (addForm.get('username')?.invalid && addForm.get('username')?.touched) {
+                    <span class="form-error">Username is required.</span>
+                  }
                 </div>
 
                 <!-- Email -->
                 <div class="form-group">
                   <label for="emp-email">Email Address <span class="required">*</span></label>
                   <input id="emp-email" type="email" class="form-control" formControlName="email" placeholder="john.doe@company.com" />
+                  @if (addForm.get('email')?.invalid && addForm.get('email')?.touched) {
+                    <span class="form-error">Enter a valid email address.</span>
+                  }
                 </div>
 
-                <!-- Role -->
+                <!-- System Role -->
                 <div class="form-group">
                   <label for="emp-role">System Role <span class="required">*</span></label>
                   <select id="emp-role" class="form-select" formControlName="roleId">
-                    <option [value]="1">Admin</option>
-                    <option [value]="2">HR</option>
-                    <option [value]="3">Manager</option>
-                    <option [value]="4">Employee</option>
+                    <option [ngValue]="1">Admin (Full Control)</option>
+                    <option [ngValue]="2">HR (HR Management)</option>
+                    <option [ngValue]="3">Manager (Team Lead)</option>
+                    <option [ngValue]="4">Employee (Standard Access)</option>
                   </select>
                 </div>
 
                 <!-- Department -->
                 <div class="form-group">
                   <label for="emp-dept">Department</label>
-                  <select id="emp-dept" class="form-select" formControlName="departmentId" (change)="onDepartmentChange($event)">
+                  <select id="emp-dept" class="form-select" formControlName="departmentId" (change)="onAddDeptChange()">
                     <option [ngValue]="null">Select Department</option>
                     @for (dept of departments; track dept.id) {
                       <option [ngValue]="dept.id">{{ dept.name }}</option>
@@ -260,11 +303,14 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                   </select>
                 </div>
 
-                <!-- Designation -->
+                <!-- Designation (Dropdown) -->
                 <div class="form-group">
-                  <label for="emp-desig">Designation ID <span class="required">*</span></label>
-                  <input id="emp-desig" type="number" class="form-control" formControlName="designationId" placeholder="1" />
-                  <span class="form-hint">Enter the ID of the designation (e.g. 1).</span>
+                  <label for="emp-desig">Designation <span class="required">*</span></label>
+                  <select id="emp-desig" class="form-select" formControlName="designationId">
+                    @for (desig of designations; track desig.id) {
+                      <option [ngValue]="desig.id">{{ desig.name }}</option>
+                    }
+                  </select>
                 </div>
 
                 <!-- Supervisor -->
@@ -319,7 +365,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 
                 <div class="form-group">
                   <label for="edit-dept">Department</label>
-                  <select id="edit-dept" class="form-select" formControlName="departmentId">
+                  <select id="edit-dept" class="form-select" formControlName="departmentId" (change)="onEditDeptChange()">
                     <option [ngValue]="null">None</option>
                     @for (dept of departments; track dept.id) {
                       <option [ngValue]="dept.id">{{ dept.name }}</option>
@@ -331,15 +377,19 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                   <label for="edit-team">Team</label>
                   <select id="edit-team" class="form-select" formControlName="teamId">
                     <option [ngValue]="null">None</option>
-                    @for (team of allTeams; track team.id) {
+                    @for (team of editAvailableTeams; track team.id) {
                       <option [ngValue]="team.id">{{ team.name }}</option>
                     }
                   </select>
                 </div>
 
                 <div class="form-group">
-                  <label for="edit-desig">Designation ID <span class="required">*</span></label>
-                  <input id="edit-desig" type="number" class="form-control" formControlName="designationId" />
+                  <label for="edit-desig">Designation <span class="required">*</span></label>
+                  <select id="edit-desig" class="form-select" formControlName="designationId">
+                    @for (desig of designations; track desig.id) {
+                      <option [ngValue]="desig.id">{{ desig.name }}</option>
+                    }
+                  </select>
                 </div>
 
                 <div class="form-group">
@@ -395,15 +445,15 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             <div class="profile-details-grid">
               <div class="detail-item">
                 <span class="detail-label">Department</span>
-                <span class="detail-val">{{ selectedEmployee.department || 'Not Assigned' }}</span>
+                <span class="detail-val font-semibold">{{ selectedEmployee.department || 'Not Assigned' }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Team</span>
-                <span class="detail-val">{{ selectedEmployee.team || 'Not Assigned' }}</span>
+                <span class="detail-val font-semibold">{{ selectedEmployee.team || 'Not Assigned' }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Designation</span>
-                <span class="detail-val">{{ selectedEmployee.designation || 'Not Assigned' }}</span>
+                <span class="detail-val text-primary font-semibold">{{ selectedEmployee.designation || 'Not Assigned' }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Supervisor</span>
@@ -431,6 +481,26 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
     ></app-confirm-dialog>
   `,
   styles: [`
+    .filter-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) var(--space-1);
+      margin-bottom: var(--space-3);
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+
+    .badge-dept {
+      background: var(--color-bg-secondary, #F1F5F9);
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
     .profile-details-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -475,8 +545,10 @@ export class EmployeeListComponent implements OnInit {
   private employeeApi = inject(EmployeeApiService);
   private departmentApi = inject(DepartmentApiService);
   private teamApi = inject(TeamApiService);
+  private designationApi = inject(DesignationApiService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
   authState = inject(AuthStateService);
 
   Math = Math;
@@ -484,15 +556,19 @@ export class EmployeeListComponent implements OnInit {
   allEmployees: EmployeeListItem[] = [];
   filteredEmployees: EmployeeListItem[] = [];
   departments: DepartmentListItem[] = [];
+  designations: DesignationItem[] = [];
   allTeams: TeamListItem[] = [];
   availableTeams: TeamListItem[] = [];
+  editAvailableTeams: TeamListItem[] = [];
 
   isLoading = true;
   isSubmitting = false;
 
-  // Search & Filter
+  // Search & Filters
   searchTerm = '';
   selectedDepartmentFilter = '';
+  selectedTeamFilter = '';
+  selectedDesignationFilter = '';
   selectedStatusFilter = 'all';
 
   // Pagination
@@ -526,6 +602,13 @@ export class EmployeeListComponent implements OnInit {
     designationId: [1, [Validators.required]]
   });
 
+  get filteredTeamsForFilter(): TeamListItem[] {
+    if (!this.selectedDepartmentFilter) return this.allTeams;
+    const dept = this.departments.find(d => d.name === this.selectedDepartmentFilter);
+    if (!dept) return this.allTeams;
+    return this.allTeams.filter(t => t.departmentId === dept.id);
+  }
+
   get totalPages(): number {
     return Math.ceil(this.filteredEmployees.length / this.pageSize);
   }
@@ -544,20 +627,26 @@ export class EmployeeListComponent implements OnInit {
     });
   }
 
-  private cdr = inject(ChangeDetectorRef);
-
   loadData(): void {
     this.isLoading = true;
     forkJoin({
       employees: this.employeeApi.getAll().pipe(catchError(() => of([]))),
       departments: this.departmentApi.getAll().pipe(catchError(() => of([]))),
-      teams: this.teamApi.getAll().pipe(catchError(() => of([])))
+      teams: this.teamApi.getAll().pipe(catchError(() => of([]))),
+      designations: this.designationApi.getAll().pipe(catchError(() => of([])))
     }).subscribe({
       next: (res) => {
         this.allEmployees = res.employees;
         this.departments = res.departments;
         this.allTeams = res.teams;
         this.availableTeams = res.teams;
+        this.editAvailableTeams = res.teams;
+        this.designations = res.designations;
+
+        if (this.designations.length > 0) {
+          this.addForm.patchValue({ designationId: this.designations[0].id });
+        }
+
         this.applyFilters();
         this.isLoading = false;
         this.cdr.markForCheck();
@@ -571,6 +660,24 @@ export class EmployeeListComponent implements OnInit {
 
   onSearch(term: string): void {
     this.searchTerm = term.toLowerCase().trim();
+    this.applyFilters();
+  }
+
+  onDepartmentFilterChange(): void {
+    this.selectedTeamFilter = '';
+    this.applyFilters();
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(this.searchTerm || this.selectedDepartmentFilter || this.selectedTeamFilter || this.selectedDesignationFilter || this.selectedStatusFilter !== 'all');
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedDepartmentFilter = '';
+    this.selectedTeamFilter = '';
+    this.selectedDesignationFilter = '';
+    this.selectedStatusFilter = 'all';
     this.applyFilters();
   }
 
@@ -591,6 +698,14 @@ export class EmployeeListComponent implements OnInit {
       result = result.filter(e => e.department === this.selectedDepartmentFilter);
     }
 
+    if (this.selectedTeamFilter) {
+      result = result.filter(e => e.team === this.selectedTeamFilter);
+    }
+
+    if (this.selectedDesignationFilter) {
+      result = result.filter(e => e.designation === this.selectedDesignationFilter);
+    }
+
     if (this.selectedStatusFilter === 'active') {
       result = result.filter(e => e.isActive);
     } else if (this.selectedStatusFilter === 'inactive') {
@@ -599,6 +714,27 @@ export class EmployeeListComponent implements OnInit {
 
     this.filteredEmployees = result;
     this.currentPage = 1;
+    this.cdr.markForCheck();
+  }
+
+  onAddDeptChange(): void {
+    const deptId = this.addForm.get('departmentId')?.value;
+    if (deptId) {
+      this.availableTeams = this.allTeams.filter(t => t.departmentId === deptId);
+    } else {
+      this.availableTeams = this.allTeams;
+    }
+    this.addForm.patchValue({ teamId: null });
+  }
+
+  onEditDeptChange(): void {
+    const deptId = this.editForm.get('departmentId')?.value;
+    if (deptId) {
+      this.editAvailableTeams = this.allTeams.filter(t => t.departmentId === deptId);
+    } else {
+      this.editAvailableTeams = this.allTeams;
+    }
+    this.editForm.patchValue({ teamId: null });
   }
 
   openAddModal(): void {
@@ -607,21 +743,45 @@ export class EmployeeListComponent implements OnInit {
       departmentId: null,
       teamId: null,
       supervisorId: null,
-      designationId: 1
+      designationId: this.designations.length > 0 ? this.designations[0].id : 1
     });
     this.availableTeams = this.allTeams;
     this.isAddModalOpen = true;
   }
 
-  onDepartmentChange(event: Event): void {
-    const deptId = this.addForm.value.departmentId;
-    if (deptId) {
-      this.departmentApi.getTeams(deptId).pipe(catchError(() => of([]))).subscribe(teams => {
-        this.availableTeams = teams;
-      });
+  openEditModal(emp: EmployeeListItem): void {
+    this.selectedEmployee = emp;
+    const dept = this.departments.find(d => d.name === emp.department);
+    const team = this.allTeams.find(t => t.name === emp.team);
+    const desig = this.designations.find(d => d.name === emp.designation);
+    const sup = this.allEmployees.find(e => e.name === emp.supervisor);
+
+    if (dept) {
+      this.editAvailableTeams = this.allTeams.filter(t => t.departmentId === dept.id);
     } else {
-      this.availableTeams = this.allTeams;
+      this.editAvailableTeams = this.allTeams;
     }
+
+    this.editForm.patchValue({
+      name: emp.name,
+      email: emp.email,
+      departmentId: dept?.id ?? null,
+      teamId: team?.id ?? null,
+      supervisorId: sup?.id ?? null,
+      designationId: desig?.id ?? 1
+    });
+
+    this.isEditModalOpen = true;
+  }
+
+  openViewModal(emp: EmployeeListItem): void {
+    this.selectedEmployee = emp;
+    this.isViewModalOpen = true;
+  }
+
+  openDeleteDialog(emp: EmployeeListItem): void {
+    this.selectedEmployee = emp;
+    this.isDeleteDialogOpen = true;
   }
 
   onAddSubmit(): void {
@@ -635,7 +795,7 @@ export class EmployeeListComponent implements OnInit {
       next: () => {
         this.isSubmitting = false;
         this.isAddModalOpen = false;
-        this.toast.success('Employee created successfully!');
+        this.toast.success('Employee record created successfully!');
         this.loadData();
       },
       error: () => {
@@ -644,44 +804,24 @@ export class EmployeeListComponent implements OnInit {
     });
   }
 
-  openEditModal(emp: EmployeeListItem): void {
-    this.selectedEmployee = emp;
-    const dept = this.departments.find(d => d.name === emp.department);
-    const team = this.allTeams.find(t => t.name === emp.team);
-    const sup = this.allEmployees.find(e => e.name === emp.supervisor);
-
-    this.editForm.patchValue({
-      name: emp.name,
-      email: emp.email,
-      departmentId: dept ? dept.id : null,
-      teamId: team ? team.id : null,
-      supervisorId: sup ? sup.id : null,
-      designationId: 1
-    });
-
-    this.isEditModalOpen = true;
-  }
-
   onEditSubmit(): void {
-    if (!this.selectedEmployee || this.editForm.invalid) return;
+    if (this.editForm.invalid || !this.selectedEmployee) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
 
     this.isSubmitting = true;
     this.employeeApi.update(this.selectedEmployee.id, this.editForm.value).subscribe({
       next: () => {
         this.isSubmitting = false;
         this.isEditModalOpen = false;
-        this.toast.success('Employee updated successfully!');
+        this.toast.success('Employee record updated successfully!');
         this.loadData();
       },
       error: () => {
         this.isSubmitting = false;
       }
     });
-  }
-
-  openViewModal(emp: EmployeeListItem): void {
-    this.selectedEmployee = emp;
-    this.isViewModalOpen = true;
   }
 
   toggleStatus(emp: EmployeeListItem): void {
@@ -689,14 +829,13 @@ export class EmployeeListComponent implements OnInit {
     this.employeeApi.updateStatus(emp.id, { isActive: newStatus }).subscribe({
       next: () => {
         emp.isActive = newStatus;
-        this.toast.success(`Employee ${newStatus ? 'activated' : 'deactivated'} successfully.`);
+        this.toast.success(`Employee ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+        this.applyFilters();
+      },
+      error: () => {
+        this.toast.error('Failed to update employee status.');
       }
     });
-  }
-
-  confirmDelete(emp: EmployeeListItem): void {
-    this.selectedEmployee = emp;
-    this.isDeleteDialogOpen = true;
   }
 
   onDeleteConfirmed(): void {
@@ -707,7 +846,7 @@ export class EmployeeListComponent implements OnInit {
       next: () => {
         this.isSubmitting = false;
         this.isDeleteDialogOpen = false;
-        this.toast.success('Employee deleted successfully.');
+        this.toast.success('Employee record deleted successfully.');
         this.loadData();
       },
       error: () => {

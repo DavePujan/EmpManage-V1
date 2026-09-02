@@ -4,9 +4,11 @@ import { RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { DepartmentApiService } from '../../api/department-api.service';
+import { DesignationApiService } from '../../api/designation-api.service';
 import { EmployeeApiService } from '../../api/employee-api.service';
 import { LeaveApiService } from '../../api/leave-api.service';
 import { TeamApiService } from '../../api/team-api.service';
+import { DepartmentListItem } from '../../core/models/department.models';
 import { EmployeeListItem } from '../../core/models/user.models';
 import { LeaveResponse } from '../../core/models/leave.models';
 import { AuthStateService } from '../../core/services/auth-state.service';
@@ -39,7 +41,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
           </div>
           <h1 class="welcome-title">Welcome back, {{ authState.username() }}! 👋</h1>
           <p class="welcome-subtitle">
-            Here's an overview of your organization's workforce metrics and leave activities.
+            Enterprise overview of your workforce hierarchy, departments, cross-functional teams, and leave activities.
           </p>
         </div>
 
@@ -75,7 +77,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
               [value]="stats.totalEmployees"
               icon="users"
               colorVariant="primary"
-              meta="Active workforce members"
+              meta="Registered workforce members"
             ></app-stat-card>
 
             <app-stat-card
@@ -83,7 +85,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
               [value]="stats.totalDepartments"
               icon="building"
               colorVariant="dark"
-              meta="Operational divisions"
+              meta="Active business divisions"
             ></app-stat-card>
 
             <app-stat-card
@@ -91,18 +93,64 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
               [value]="stats.totalTeams"
               icon="teams"
               colorVariant="info"
-              meta="Cross-functional units"
+              meta="Functional squads"
+            ></app-stat-card>
+
+            <app-stat-card
+              label="Designations"
+              [value]="stats.totalDesignations"
+              icon="award"
+              colorVariant="success"
+              meta="Job titles & roles"
             ></app-stat-card>
           }
 
           <!-- Pending Leaves -->
           <app-stat-card
-            [label]="(authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Pending Approvals' : 'My Active Leaves'"
+            [label]="(authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Pending Leaves' : 'My Active Leaves'"
             [value]="stats.pendingLeaves"
             icon="clock"
             colorVariant="warning"
-            [meta]="(authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Awaiting manager / HR action' : 'Your submitted requests'"
+            [meta]="(authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Awaiting review / action' : 'Your submitted requests'"
           ></app-stat-card>
+        </div>
+      }
+
+      <!-- Department Distribution & Workforce Visualization Section (Admin / HR) -->
+      @if ((authState.isAdmin() || authState.isHR()) && departments.length > 0) {
+        <div class="card mt-6">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Department Workforce Distribution</h3>
+              <p class="card-subtitle">Headcount and active teams across all organizational units</p>
+            </div>
+            <a routerLink="/departments" class="btn btn-ghost btn-sm">
+              <span>View All Departments</span>
+              <app-icon name="arrow-right" [size]="14"></app-icon>
+            </a>
+          </div>
+          <div class="card-body">
+            <div class="dept-overview-grid">
+              @for (dept of departments; track dept.id) {
+                <div class="dept-stat-box" [routerLink]="['/departments']">
+                  <div class="dept-stat-header">
+                    <span class="dept-stat-name">{{ dept.name }}</span>
+                    <span class="dept-stat-badge">{{ dept.totalEmployees }} members</span>
+                  </div>
+                  <div class="dept-progress-track">
+                    <div
+                      class="dept-progress-bar"
+                      [style.width.%]="getDepartmentPercentage(dept.totalEmployees)"
+                    ></div>
+                  </div>
+                  <div class="dept-stat-footer">
+                    <span class="text-xs text-muted">{{ dept.totalTeams }} Teams</span>
+                    <span class="text-xs text-primary font-medium">{{ getDepartmentPercentage(dept.totalEmployees) }}% of staff</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
         </div>
       }
 
@@ -113,8 +161,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
           <div class="card">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Recent Employees</h3>
-                <p class="card-subtitle">Latest registered workforce members</p>
+                <h3 class="card-title">Workforce Directory</h3>
+                <p class="card-subtitle">Latest registered employees & positions</p>
               </div>
               <a routerLink="/employees" class="btn btn-ghost btn-sm">
                 <span>View all</span>
@@ -175,10 +223,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
           <div class="card-header">
             <div>
               <h3 class="card-title">
-                {{ (authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Pending Leave Requests' : 'My Recent Leaves' }}
+                {{ (authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Recent Leave Requests' : 'My Recent Leaves' }}
               </h3>
               <p class="card-subtitle">
-                {{ (authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Requires review and approval' : 'Your recent leave applications' }}
+                {{ (authState.isAdmin() || authState.isHR() || authState.isManager()) ? 'Leave applications awaiting review' : 'Your recent leave applications' }}
               </p>
             </div>
             <a routerLink="/leaves" class="btn btn-ghost btn-sm">
@@ -280,8 +328,72 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: var(--space-4);
+    }
+
+    .dept-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .dept-stat-box {
+      padding: var(--space-4);
+      background-color: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--color-primary-light);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-2px);
+      }
+
+      .dept-stat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-2);
+
+        .dept-stat-name {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: var(--color-text-primary);
+        }
+
+        .dept-stat-badge {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--color-primary);
+          background: var(--color-primary-soft);
+          padding: 2px 8px;
+          border-radius: var(--radius-full);
+        }
+      }
+
+      .dept-progress-track {
+        height: 6px;
+        background-color: var(--color-border);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin-bottom: var(--space-2);
+
+        .dept-progress-bar {
+          height: 100%;
+          background: linear-gradient(90deg, var(--color-primary) 0%, #FB7185 100%);
+          border-radius: var(--radius-full);
+          transition: width 0.6s ease-in-out;
+        }
+      }
+
+      .dept-stat-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
     }
 
     .dashboard-grid {
@@ -357,6 +469,7 @@ export class DashboardComponent implements OnInit {
   private employeeApi = inject(EmployeeApiService);
   private departmentApi = inject(DepartmentApiService);
   private teamApi = inject(TeamApiService);
+  private designationApi = inject(DesignationApiService);
   private leaveApi = inject(LeaveApiService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -367,9 +480,11 @@ export class DashboardComponent implements OnInit {
     totalEmployees: 0,
     totalDepartments: 0,
     totalTeams: 0,
+    totalDesignations: 0,
     pendingLeaves: 0
   };
 
+  departments: DepartmentListItem[] = [];
   recentEmployees: EmployeeListItem[] = [];
   recentLeaves: LeaveResponse[] = [];
 
@@ -385,6 +500,8 @@ export class DashboardComponent implements OnInit {
     const empCount$ = isElevated ? this.employeeApi.getCount().pipe(catchError(() => of({ totalEmployees: 0 }))) : of({ totalEmployees: 0 });
     const deptCount$ = isElevated ? this.departmentApi.getCount().pipe(catchError(() => of({ totalDepartments: 0 }))) : of({ totalDepartments: 0 });
     const teamCount$ = isElevated ? this.teamApi.getCount().pipe(catchError(() => of({ totalTeams: 0 }))) : of({ totalTeams: 0 });
+    const desigList$ = isElevated ? this.designationApi.getAll().pipe(catchError(() => of([]))) : of([]);
+    const deptsList$ = isElevated ? this.departmentApi.getAll().pipe(catchError(() => of([]))) : of([]);
     
     const leaves$ = (isElevated || isManager)
       ? this.leaveApi.getPending().pipe(catchError(() => of([])))
@@ -396,17 +513,21 @@ export class DashboardComponent implements OnInit {
       empCount: empCount$,
       deptCount: deptCount$,
       teamCount: teamCount$,
+      designations: desigList$,
+      depts: deptsList$,
       leaves: leaves$,
       employees: empsList$
     }).subscribe({
       next: (res) => {
-        this.stats.totalEmployees = res.empCount?.totalEmployees ?? 0;
-        this.stats.totalDepartments = res.deptCount?.totalDepartments ?? 0;
+        this.stats.totalEmployees = res.empCount?.totalEmployees ?? res.employees?.length ?? 0;
+        this.stats.totalDepartments = res.deptCount?.totalDepartments ?? res.depts?.length ?? 0;
         this.stats.totalTeams = res.teamCount?.totalTeams ?? 0;
+        this.stats.totalDesignations = res.designations?.length ?? 0;
         this.stats.pendingLeaves = res.leaves?.length ?? 0;
 
-        this.recentLeaves = res.leaves?.slice(0, 5) ?? [];
-        this.recentEmployees = res.employees?.slice(0, 5) ?? [];
+        this.departments = res.depts ?? [];
+        this.recentLeaves = res.leaves?.slice(0, 6) ?? [];
+        this.recentEmployees = res.employees?.slice(0, 6) ?? [];
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -415,6 +536,11 @@ export class DashboardComponent implements OnInit {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  getDepartmentPercentage(deptEmployees: number): number {
+    if (!this.stats.totalEmployees || this.stats.totalEmployees === 0) return 0;
+    return Math.round((deptEmployees / this.stats.totalEmployees) * 100);
   }
 
   navigateToAddEmployee(): void {

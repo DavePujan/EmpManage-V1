@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.DTOs.Designation;
+using EmpManagementAPI2.DTOs.Designation;
 using EmpManagementAPI2.Interfaces;
 
 namespace EmpManagementAPI2.Services;
@@ -18,5 +18,11 @@ public class DesignationService : IDesignationService
     {
         return await _designationRepository
             .CreateDesignationAsync(dto);
+    }
+
+    public async Task<IEnumerable<DesignationListItemDto>> GetAllDesignationsAsync()
+    {
+        return await _designationRepository
+            .GetAllDesignationsAsync();
     }
 }

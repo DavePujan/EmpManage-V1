@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.Data;
+using EmpManagementAPI2.Data;
 using EmpManagementAPI2.DTOs.Designation;
 using EmpManagementAPI2.Interfaces;
 using EmpManagementAPI2.Models;
@@ -37,5 +37,20 @@ public class DesignationRepository : IDesignationRepository
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<IEnumerable<DesignationListItemDto>> GetAllDesignationsAsync()
+    {
+        return await _context.Designations
+            .AsNoTracking()
+            .Select(d => new DesignationListItemDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Description = d.Description,
+                IsActive = d.IsActive,
+                EmployeeCount = _context.EmployeeDesignations.Count(ed => ed.DesignationId == d.Id)
+            })
+            .ToListAsync();
     }
 }
