@@ -1,0 +1,19 @@
+{
+  "route": "/**",
+  "url": "http://localhost:4200/not-found-page-404-audit",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Wildcard 404 page not found fallback screen for unmapped URLs",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full desktop view of 404 Not Found error screen with Back to Dashboard navigation button",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "buttons": ["Back to Dashboard"]
+  },
+  "timestamp": "2026-10-03T17:52:00+05:30"
+}

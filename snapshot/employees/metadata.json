@@ -1,0 +1,60 @@
+{
+  "route": "/employees",
+  "url": "http://localhost:4200/employees",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Comprehensive employee directory with advanced role-based filtering, profile modal previews, and complete lifecycle management",
+  "snapshots": [
+    {
+      "file": "page-desktop.png",
+      "state": "page-desktop",
+      "description": "Full desktop directory table with search, department/team/designation/status filters, and action icons",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "page-mobile.png",
+      "state": "page-mobile",
+      "description": "Responsive mobile directory with stacked filters and touch-friendly controls",
+      "viewport": { "width": 390, "height": 844 },
+      "fullPage": true
+    },
+    {
+      "file": "add-employee-modal.png",
+      "state": "add-employee-modal",
+      "trigger": "Add Employee button",
+      "description": "New employee creation modal with department, team, designation, and supervisor selections",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "edit-employee-modal.png",
+      "state": "edit-employee-modal",
+      "trigger": "Edit button (row action)",
+      "description": "Employee editing modal with pre-populated fields and organizational re-assignment",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "employee-profile-modal.png",
+      "state": "employee-profile-modal",
+      "trigger": "View Details button (row action)",
+      "description": "Detailed employee profile preview card displaying avatar, active role, department, team, and supervisor",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "delete-confirmation.png",
+      "state": "delete-confirmation",
+      "trigger": "Delete button (row action)",
+      "description": "Destructive record deletion confirmation dialog",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "toolbar": ["Search Input", "Department Filter", "Team Filter", "Designation Filter", "Status Filter", "Reset Filters"],
+    "rowActions": ["View Details", "Edit Employee", "Toggle Active/Inactive Status", "Delete Employee"],
+    "modals": ["Add Employee Modal", "Edit Employee Modal", "Employee Profile Modal", "Confirm Delete Dialog"]
+  },
+  "timestamp": "2026-10-03T17:44:00+05:30"
+}

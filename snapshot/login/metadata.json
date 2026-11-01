@@ -1,0 +1,29 @@
+{
+  "route": "/login",
+  "url": "http://localhost:4200/login",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Public sign in and system initialization interface",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full-page sign in view with brand hero and credentials form",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "initial-admin-modal.png",
+      "state": "initial-admin-modal",
+      "trigger": "Create Initial Admin",
+      "description": "Modal dialog for initializing master administrator credentials",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "buttons": ["Sign in", "Create Initial Admin", "Show/Hide password", "Cancel", "Create Admin"],
+    "modals": ["Initial Admin Setup Modal"],
+    "inputs": ["Username", "Password", "Admin Username", "Admin Email", "Admin Password"]
+  },
+  "timestamp": "2026-10-03T17:40:00+05:30"
+}

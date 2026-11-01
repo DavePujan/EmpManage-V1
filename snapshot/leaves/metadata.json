@@ -1,0 +1,54 @@
+{
+  "route": "/leaves",
+  "url": "http://localhost:4200/leaves",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Enterprise leave hub featuring multi-tab status views, leave applications, dynamic day calculation, and managerial approval/rejection workflows",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full desktop table view of leave records with duration, type, employee, reviewer, and status tags",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "apply-leave-modal.png",
+      "state": "apply-leave-modal",
+      "trigger": "Apply for Leave button",
+      "description": "Leave application modal featuring leave type dropdown, date pickers, duration calculation pill, and team leave toggle",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "reject-leave-modal.png",
+      "state": "reject-leave-modal",
+      "trigger": "Reject button (row action)",
+      "description": "Leave rejection dialog requiring reason and operational explanation",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "approve-confirmation.png",
+      "state": "approve-confirmation",
+      "trigger": "Approve button (row action)",
+      "description": "Confirmation dialog for approving employee time-off request",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "cancel-confirmation.png",
+      "state": "cancel-confirmation",
+      "trigger": "Cancel button (row action)",
+      "description": "Confirmation dialog for withdrawing a pending leave application",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "tabs": ["My Leaves", "Pending Approvals", "All Leave History", "Team Leaves"],
+    "toolbar": ["Search Input", "Status Filter"],
+    "rowActions": ["Cancel Request", "Approve Leave", "Reject Leave"],
+    "modals": ["Apply for Leave Modal", "Reject Leave Modal", "Approve Confirmation Dialog", "Cancel Leave Confirmation Dialog"]
+  },
+  "timestamp": "2026-10-03T17:51:00+05:30"
+}

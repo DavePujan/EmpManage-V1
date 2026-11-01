@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `Employees` (
 -- Foreign key for Teams.TeamHeadEmployeeId referencing Employees
 ALTER TABLE `Teams`
 ADD CONSTRAINT `FK_Teams_Employees_TeamHead`
-FOREIGN KEY IF NOT EXISTS (`TeamHeadEmployeeId`) REFERENCES `Employees` (`Id`) ON DELETE RESTRICT;
+FOREIGN KEY (`TeamHeadEmployeeId`) REFERENCES `Employees` (`Id`) ON DELETE RESTRICT;
 
 -- EmployeeDesignations (Many-to-Many: Employees <-> Designations)
 CREATE TABLE IF NOT EXISTS `EmployeeDesignations` (

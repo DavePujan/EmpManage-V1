@@ -1,0 +1,235 @@
+{
+  "totalInteractionsTested": 38,
+  "successfulInteractions": 38,
+  "failedInteractions": 0,
+  "interactions": [
+    {
+      "page": "/login",
+      "element": "Password visibility toggle",
+      "type": "icon-button",
+      "result": "toggles password field text/password input type"
+    },
+    {
+      "page": "/login",
+      "element": "Create Initial Admin",
+      "type": "ghost-button",
+      "result": "opens initial admin modal dialog"
+    },
+    {
+      "page": "/login",
+      "element": "Cancel initial admin",
+      "type": "modal-button",
+      "result": "closes initial admin modal dialog"
+    },
+    {
+      "page": "/login",
+      "element": "Sign in",
+      "type": "form-submit",
+      "result": "authenticates credentials with backend and navigates to /dashboard"
+    },
+    {
+      "page": "/dashboard",
+      "element": "Add Employee quick action",
+      "type": "link-button",
+      "result": "routes to /employees?action=create"
+    },
+    {
+      "page": "/dashboard",
+      "element": "Leave Hub quick action",
+      "type": "link-button",
+      "result": "routes to /leaves"
+    },
+    {
+      "page": "/dashboard",
+      "element": "View All Departments",
+      "type": "link-button",
+      "result": "routes to /departments"
+    },
+    {
+      "page": "/dashboard",
+      "element": "Department Stat Box",
+      "type": "clickable-card",
+      "result": "routes to /departments on click"
+    },
+    {
+      "page": "/dashboard",
+      "element": "View all employees",
+      "type": "link-button",
+      "result": "routes to /employees"
+    },
+    {
+      "page": "/dashboard",
+      "element": "View all leaves",
+      "type": "link-button",
+      "result": "routes to /leaves"
+    },
+    {
+      "page": "/employees",
+      "element": "Search Input",
+      "type": "filter-input",
+      "result": "filters employee table rows in real-time"
+    },
+    {
+      "page": "/employees",
+      "element": "Department Filter",
+      "type": "select-dropdown",
+      "result": "filters employees by department and updates available teams"
+    },
+    {
+      "page": "/employees",
+      "element": "Team Filter",
+      "type": "select-dropdown",
+      "result": "filters employees by functional squad"
+    },
+    {
+      "page": "/employees",
+      "element": "Designation Filter",
+      "type": "select-dropdown",
+      "result": "filters employees by job title"
+    },
+    {
+      "page": "/employees",
+      "element": "Status Filter",
+      "type": "select-dropdown",
+      "result": "filters employees by active/inactive status"
+    },
+    {
+      "page": "/employees",
+      "element": "Reset Filters",
+      "type": "action-button",
+      "result": "clears all search and filter conditions back to default"
+    },
+    {
+      "page": "/employees",
+      "element": "Add Employee",
+      "type": "modal-trigger",
+      "result": "opens Add Employee modal dialog"
+    },
+    {
+      "page": "/employees",
+      "element": "View Details",
+      "type": "row-action",
+      "result": "opens Employee Profile preview modal with avatar and details grid"
+    },
+    {
+      "page": "/employees",
+      "element": "Edit Employee",
+      "type": "row-action",
+      "result": "opens Edit Employee modal with pre-populated form"
+    },
+    {
+      "page": "/employees",
+      "element": "Delete Employee",
+      "type": "row-action",
+      "result": "opens destructive Delete Confirmation dialog"
+    },
+    {
+      "page": "/employees",
+      "element": "Toggle Status",
+      "type": "row-action",
+      "result": "switches active/inactive state"
+    },
+    {
+      "page": "/departments",
+      "element": "Add Department",
+      "type": "modal-trigger",
+      "result": "opens Create Department modal dialog"
+    },
+    {
+      "page": "/departments",
+      "element": "Department Card",
+      "type": "clickable-card",
+      "result": "opens Department Details and sub-teams roster modal"
+    },
+    {
+      "page": "/teams",
+      "element": "Create Team",
+      "type": "modal-trigger",
+      "result": "opens Create Team modal dialog"
+    },
+    {
+      "page": "/teams",
+      "element": "Team Card",
+      "type": "clickable-card",
+      "result": "opens Team Details and assigned member roster modal"
+    },
+    {
+      "page": "/designations",
+      "element": "Add Designation",
+      "type": "modal-trigger",
+      "result": "opens Create Designation modal dialog"
+    },
+    {
+      "page": "/leaves",
+      "element": "My Leaves Tab",
+      "type": "tab-button",
+      "result": "displays employee personal leave records"
+    },
+    {
+      "page": "/leaves",
+      "element": "Pending Approvals Tab",
+      "type": "tab-button",
+      "result": "displays leave applications awaiting managerial/HR action"
+    },
+    {
+      "page": "/leaves",
+      "element": "All Leave History Tab",
+      "type": "tab-button",
+      "result": "displays full historical log of approved, rejected, and cancelled leaves"
+    },
+    {
+      "page": "/leaves",
+      "element": "Team Leaves Tab",
+      "type": "tab-button",
+      "result": "displays cross-team leaves for HR review"
+    },
+    {
+      "page": "/leaves",
+      "element": "Apply for Leave",
+      "type": "modal-trigger",
+      "result": "opens Apply for Leave modal with date pickers and dynamic duration calculator"
+    },
+    {
+      "page": "/leaves",
+      "element": "Approve Leave",
+      "type": "row-action",
+      "result": "opens Approve Leave confirmation prompt dialog"
+    },
+    {
+      "page": "/leaves",
+      "element": "Reject Leave",
+      "type": "row-action",
+      "result": "opens Reject Leave modal requiring explanation"
+    },
+    {
+      "page": "/leaves",
+      "element": "Cancel Leave",
+      "type": "row-action",
+      "result": "opens Cancel Leave confirmation prompt dialog"
+    },
+    {
+      "page": "/profile",
+      "element": "Personal Information Tab",
+      "type": "tab-button",
+      "result": "displays name and email update form"
+    },
+    {
+      "page": "/profile",
+      "element": "Security & Password Tab",
+      "type": "tab-button",
+      "result": "displays current, new, and confirm password reset form"
+    },
+    {
+      "page": "/403",
+      "element": "Return to Dashboard",
+      "type": "link-button",
+      "result": "routes user back to /dashboard"
+    },
+    {
+      "page": "/404",
+      "element": "Back to Dashboard",
+      "type": "link-button",
+      "result": "routes user back to /dashboard"
+    }
+  ]
+}

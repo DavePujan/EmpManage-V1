@@ -1,0 +1,28 @@
+{
+  "route": "/profile",
+  "url": "http://localhost:4200/profile",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "User account settings and credential management with personal profile card, information update form, and secure password reset",
+  "snapshots": [
+    {
+      "file": "personal-information.png",
+      "state": "personal-information",
+      "description": "Full desktop view with user overview sidebar card and personal details update form",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "security-password.png",
+      "state": "security-password",
+      "description": "Full desktop view with security and password change form featuring visibility controls and validation",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "tabs": ["Personal Information", "Security & Password"],
+    "buttons": ["Save Profile", "Update Password", "Show/Hide Current Password", "Show/Hide New Password", "Show/Hide Confirm Password"],
+    "cards": ["Profile Sidebar Summary Card", "Personal Details Card", "Change Password Card"]
+  },
+  "timestamp": "2026-10-03T17:51:00+05:30"
+}

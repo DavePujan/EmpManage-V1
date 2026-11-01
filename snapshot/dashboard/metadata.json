@@ -1,0 +1,28 @@
+{
+  "route": "/dashboard",
+  "url": "http://localhost:4200/dashboard",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Executive dashboard featuring organizational KPI widgets, workforce distribution metrics, and recent activity feeds",
+  "snapshots": [
+    {
+      "file": "page-desktop.png",
+      "state": "page-desktop",
+      "description": "Full desktop view with expanded sidebar, 5 KPI cards, department distribution charts, and workforce feeds",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "page-mobile.png",
+      "state": "page-mobile",
+      "description": "Responsive mobile layout with stacked KPI grid, collapsible navigation, and mobile-friendly tables",
+      "viewport": { "width": 390, "height": 844 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "kpiCards": ["Total Employees", "Departments", "Teams", "Designations", "Pending Leaves"],
+    "sections": ["Department Workforce Distribution", "Workforce Directory", "Recent Leave Requests"],
+    "buttons": ["Add Employee", "Leave Hub", "View All Departments", "View all (Employees)", "View all (Leaves)"]
+  },
+  "timestamp": "2026-10-03T17:42:00+05:30"
+}

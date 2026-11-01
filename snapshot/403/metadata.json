@@ -1,0 +1,19 @@
+{
+  "route": "/403",
+  "url": "http://localhost:4200/403",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Access forbidden screen displayed when an authenticated user attempts to access an unauthorized route or action",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full desktop view of 403 Access Restricted page with warning icon and Return to Dashboard button",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "buttons": ["Return to Dashboard"]
+  },
+  "timestamp": "2026-10-03T17:52:00+05:30"
+}

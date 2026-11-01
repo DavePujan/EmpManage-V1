@@ -1,0 +1,37 @@
+{
+  "route": "/departments",
+  "url": "http://localhost:4200/departments",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Organizational department directory with team counts, workforce metrics, and department creation workflows",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full desktop grid view of all organization departments with employee & team badges",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "create-department-modal.png",
+      "state": "create-department-modal",
+      "trigger": "Add Department button",
+      "description": "Department creation dialog with title and description fields",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "department-details-modal.png",
+      "state": "department-details-modal",
+      "trigger": "Department card click",
+      "description": "Department details view showing sub-teams, headcount statistics, and member employee roster",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "cards": ["Department Card Grid", "Department Headcount Box", "Teams Count Box"],
+    "buttons": ["Add Department", "Department Card (click to inspect)", "Cancel", "Create Department", "Close"],
+    "modals": ["Create Department Modal", "Department Details Modal"]
+  },
+  "timestamp": "2026-10-03T17:45:00+05:30"
+}

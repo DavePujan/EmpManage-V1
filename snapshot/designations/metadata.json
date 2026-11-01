@@ -1,0 +1,29 @@
+{
+  "route": "/designations",
+  "url": "http://localhost:4200/designations",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Organizational job titles and designations catalog with workforce assignment counts and creation workflow",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full desktop table view of all 25 designations with job descriptions and assigned staff badges",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "create-designation-modal.png",
+      "state": "create-designation-modal",
+      "trigger": "Add Designation button",
+      "description": "Modal form for defining a new job designation title and responsibility description",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "toolbar": ["Search Input"],
+    "buttons": ["Add Designation", "Cancel", "Create Designation (submit)", "Close (X)"],
+    "modals": ["Create Designation Modal"]
+  },
+  "timestamp": "2026-10-03T17:48:00+05:30"
+}

@@ -1,0 +1,37 @@
+{
+  "route": "/teams",
+  "url": "http://localhost:4200/teams",
+  "title": "EmpManage Enterprise — Employee & Leave Management System",
+  "description": "Cross-functional team roster with department associations, leadership designations, and member headcounts",
+  "snapshots": [
+    {
+      "file": "page.png",
+      "state": "page",
+      "description": "Full desktop grid view of organization teams with team head and member count badges",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "create-team-modal.png",
+      "state": "create-team-modal",
+      "trigger": "Create Team button",
+      "description": "Team creation dialog with name and department selection",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "file": "team-details-modal.png",
+      "state": "team-details-modal",
+      "trigger": "Team card click",
+      "description": "Team inspection dialog showing team leadership, department, total members, and member employee roster",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ],
+  "interactiveElements": {
+    "cards": ["Team Card Grid", "Team Info Header Box", "Team Members Roster List"],
+    "buttons": ["Create Team", "Team Card (click to inspect)", "Cancel", "Create Team (submit)", "Close (X)"],
+    "modals": ["Create Team Modal", "Team Details & Member Roster Modal"]
+  },
+  "timestamp": "2026-10-03T17:46:00+05:30"
+}

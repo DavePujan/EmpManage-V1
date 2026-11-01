@@ -1,0 +1,199 @@
+{
+  "totalRoutes": 10,
+  "successfulPages": 10,
+  "failedPages": 0,
+  "totalSnapshots": 25,
+  "desktopSnapshots": 23,
+  "mobileSnapshots": 2,
+  "snapshots": [
+    {
+      "route": "/login",
+      "state": "page",
+      "file": "login/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/login",
+      "state": "initial-admin-modal",
+      "file": "login/initial-admin-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/dashboard",
+      "state": "page-desktop",
+      "file": "dashboard/page-desktop.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/dashboard",
+      "state": "page-mobile",
+      "file": "dashboard/page-mobile.png",
+      "viewport": { "width": 390, "height": 844 },
+      "fullPage": true
+    },
+    {
+      "route": "/employees",
+      "state": "page-desktop",
+      "file": "employees/page-desktop.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/employees",
+      "state": "page-mobile",
+      "file": "employees/page-mobile.png",
+      "viewport": { "width": 390, "height": 844 },
+      "fullPage": true
+    },
+    {
+      "route": "/employees",
+      "state": "add-employee-modal",
+      "file": "employees/add-employee-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/employees",
+      "state": "edit-employee-modal",
+      "file": "employees/edit-employee-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/employees",
+      "state": "employee-profile-modal",
+      "file": "employees/employee-profile-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/employees",
+      "state": "delete-confirmation",
+      "file": "employees/delete-confirmation.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/departments",
+      "state": "page",
+      "file": "departments/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/departments",
+      "state": "create-department-modal",
+      "file": "departments/create-department-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/departments",
+      "state": "department-details-modal",
+      "file": "departments/department-details-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/teams",
+      "state": "page",
+      "file": "teams/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/teams",
+      "state": "create-team-modal",
+      "file": "teams/create-team-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/teams",
+      "state": "team-details-modal",
+      "file": "teams/team-details-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/designations",
+      "state": "page",
+      "file": "designations/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/designations",
+      "state": "create-designation-modal",
+      "file": "designations/create-designation-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/leaves",
+      "state": "page",
+      "file": "leaves/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/leaves",
+      "state": "apply-leave-modal",
+      "file": "leaves/apply-leave-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/leaves",
+      "state": "reject-leave-modal",
+      "file": "leaves/reject-leave-modal.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/leaves",
+      "state": "approve-confirmation",
+      "file": "leaves/approve-confirmation.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/leaves",
+      "state": "cancel-confirmation",
+      "file": "leaves/cancel-confirmation.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/profile",
+      "state": "personal-information",
+      "file": "profile/personal-information.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/profile",
+      "state": "security-password",
+      "file": "profile/security-password.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/403",
+      "state": "page",
+      "file": "403/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    },
+    {
+      "route": "/**",
+      "state": "page",
+      "file": "404/page.png",
+      "viewport": { "width": 1440, "height": 900 },
+      "fullPage": true
+    }
+  ]
+}
