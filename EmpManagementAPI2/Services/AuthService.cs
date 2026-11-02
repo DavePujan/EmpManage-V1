@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.Data;
+using EmpManagementAPI2.Data;
 using EmpManagementAPI2.DTOs.Auth;
 using EmpManagementAPI2.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -14,15 +14,18 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IPasswordService _passwordService;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         AppDbContext context,
         IPasswordService passwordService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IEmailService emailService)
     {
         _context = context;
         _passwordService = passwordService;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     public async Task<string?> LoginAsync(
@@ -55,68 +58,61 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Get user's role
-        var userRole = await _context.UserRoles
-            .Include(ur => ur.Role)
-            .FirstOrDefaultAsync(ur => ur.UserId == user.Id);
+        // Get user roles
+        var roles = await _context.UserRoles
+            .Where(ur => ur.UserId == user.Id)
+            .Select(ur => ur.Role.Name)
+            .ToListAsync();
 
-        if (userRole == null)
-        {
-            return null;
-        }
+        // Generate JWT token
+        var tokenHandler = new JwtSecurityTokenHandler();
 
-        // Create claims
+        var key = Encoding.UTF8.GetBytes(
+            _configuration["Jwt:Key"]!);
+
         var claims = new List<Claim>
         {
-            new Claim(
-                ClaimTypes.NameIdentifier,
-                user.Id.ToString()),
-
-            new Claim(
-                ClaimTypes.Name,
-                user.Username),
-
-            new Claim(
-                ClaimTypes.Role,
-                userRole.Role.Name)
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email)
         };
 
-        // Get JWT settings
-        var key = _configuration["Jwt:Key"]!;
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
-        var securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(key));
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
 
-        var credentials = new SigningCredentials(
-            securityKey,
-            SecurityAlgorithms.HmacSha256);
+            Expires = DateTime.UtcNow.AddMinutes(
+                double.Parse(_configuration["Jwt:DurationInMinutes"]!)),
 
-        // Create JWT
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(
-                Convert.ToDouble(
-                    _configuration["Jwt:ExpiryMinutes"])),
-            signingCredentials: credentials);
+            Issuer = _configuration["Jwt:Issuer"],
 
-        // Convert JWT object to string
-        return new JwtSecurityTokenHandler()
-            .WriteToken(token);
+            Audience = _configuration["Jwt:Audience"],
+
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return tokenHandler.WriteToken(token);
     }
 
     public async Task<bool> ChangePasswordAsync(
-    int userId,
-    ChangePasswordDto dto)
+        int userId,
+        ChangePasswordDto dto)
     {
-        // Check whether new password and confirm password match
+        // New passwords must match
         if (dto.NewPassword != dto.ConfirmPassword)
         {
             return false;
         }
 
-        // Find the user
         var user = await _context.AppUsers
             .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -147,6 +143,53 @@ public class AuthService : IAuthService
         user.PasswordSalt = newPasswordSalt;
 
         await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Email))
+        {
+            return false;
+        }
+
+        var user = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.Trim().ToLower());
+
+        // Do not reveal whether email exists for security reasons
+        if (user == null)
+        {
+            return true;
+        }
+
+        // Generate temporary password
+        const string characters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+        string temporaryPassword = new string(
+            Enumerable.Range(0, 10)
+                .Select(_ => characters[System.Security.Cryptography.RandomNumberGenerator.GetInt32(characters.Length)])
+                .ToArray());
+
+        // Create password hash and salt
+        _passwordService.CreatePasswordHash(
+            temporaryPassword,
+            out byte[] passwordHash,
+            out byte[] passwordSalt);
+
+        user.PasswordHash = passwordHash;
+        user.PasswordSalt = passwordSalt;
+
+        await _context.SaveChangesAsync();
+
+        // Send temporary password email
+        try
+        {
+            await _emailService.SendPasswordResetEmailAsync(user.Email, temporaryPassword);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ForgotPassword Warning] Failed to send email: {ex.Message}");
+        }
 
         return true;
     }

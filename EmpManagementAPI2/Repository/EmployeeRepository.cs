@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.Data;
+using EmpManagementAPI2.Data;
 using EmpManagementAPI2.DTOs.Employee;
 using EmpManagementAPI2.Interfaces;
 using EmpManagementAPI2.Models;
@@ -24,7 +24,6 @@ public class EmployeeRepository : IEmployeeRepository
         CreateEmployeeDto dto,
         string temporaryPassword)
     {
-        // Check whether username already exists
         var usernameExists = await _context.AppUsers
             .AnyAsync(u => u.Username == dto.Username);
 
@@ -33,7 +32,6 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check whether email already exists
         var emailExists = await _context.AppUsers
             .AnyAsync(u => u.Email == dto.Email);
 
@@ -42,7 +40,6 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check whether role exists
         var role = await _context.Roles
             .FirstOrDefaultAsync(r => r.Id == dto.RoleId);
 
@@ -51,7 +48,6 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check whether designation exists
         var designation = await _context.Designations
             .FirstOrDefaultAsync(d => d.Id == dto.DesignationId);
 
@@ -60,7 +56,6 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check whether department exists
         if (dto.DepartmentId.HasValue)
         {
             var departmentExists = await _context.Departments
@@ -72,7 +67,6 @@ public class EmployeeRepository : IEmployeeRepository
             }
         }
 
-        // Check whether team exists
         if (dto.TeamId.HasValue)
         {
             var team = await _context.Teams
@@ -83,8 +77,6 @@ public class EmployeeRepository : IEmployeeRepository
                 return false;
             }
 
-            // If department is selected,
-            // make sure the team belongs to that department.
             if (dto.DepartmentId.HasValue &&
                 team.DepartmentId != dto.DepartmentId.Value)
             {
@@ -92,13 +84,11 @@ public class EmployeeRepository : IEmployeeRepository
             }
         }
 
-        // Create password hash and salt
         _passwordService.CreatePasswordHash(
             temporaryPassword,
             out byte[] passwordHash,
             out byte[] passwordSalt);
 
-        // Create AppUser
         var appUser = new AppUser
         {
             Username = dto.Username,
@@ -109,10 +99,8 @@ public class EmployeeRepository : IEmployeeRepository
         };
 
         _context.AppUsers.Add(appUser);
-
         await _context.SaveChangesAsync();
 
-        // Create Employee
         var employee = new Employee
         {
             AppUserId = appUser.Id,
@@ -126,10 +114,8 @@ public class EmployeeRepository : IEmployeeRepository
         };
 
         _context.Employees.Add(employee);
-
         await _context.SaveChangesAsync();
 
-        // Assign designation to employee
         var employeeDesignation = new EmployeeDesignation
         {
             EmployeeId = employee.Id,
@@ -138,7 +124,6 @@ public class EmployeeRepository : IEmployeeRepository
 
         _context.EmployeeDesignations.Add(employeeDesignation);
 
-        // Assign role
         var userRole = new UserRole
         {
             UserId = appUser.Id,
@@ -146,7 +131,6 @@ public class EmployeeRepository : IEmployeeRepository
         };
 
         _context.UserRoles.Add(userRole);
-
         await _context.SaveChangesAsync();
 
         return true;
@@ -156,6 +140,7 @@ public class EmployeeRepository : IEmployeeRepository
     public async Task<List<EmployeeListDto>> GetAllEmployeesAsync()
     {
         return await _context.Employees
+            .AsNoTracking()
             .Include(e => e.Department)
             .Include(e => e.Team)
             .Include(e => e.Supervisor)
@@ -166,32 +151,122 @@ public class EmployeeRepository : IEmployeeRepository
                 Id = e.Id,
                 Name = e.Name,
                 Email = e.Email,
-
-                Department = e.Department != null
-                    ? e.Department.Name
-                    : "",
-
-                Team = e.Team != null
-                    ? e.Team.Name
-                    : "",
-
+                Department = e.Department != null ? e.Department.Name : "",
+                Team = e.Team != null ? e.Team.Name : "",
                 Designation = e.EmployeeDesignations
                     .Select(ed => ed.Designation.Name)
                     .FirstOrDefault() ?? "",
-
-                Supervisor = e.Supervisor != null
-                    ? e.Supervisor.Name
-                    : "",
-
+                Supervisor = e.Supervisor != null ? e.Supervisor.Name : "",
                 IsActive = e.IsActive
             })
             .ToListAsync();
+    }
+
+    // SEARCH / FILTERED PAGINATED EMPLOYEES
+    public async Task<EmployeePagedResultDto> SearchEmployeesAsync(EmployeeFilterDto filter)
+    {
+        var query = _context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Include(e => e.Team)
+            .Include(e => e.Supervisor)
+            .Include(e => e.EmployeeDesignations)
+                .ThenInclude(ed => ed.Designation)
+            .AsQueryable();
+
+        // Search text
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var search = filter.Search.Trim().ToLower();
+            query = query.Where(e => e.Name.ToLower().Contains(search) || e.Email.ToLower().Contains(search));
+        }
+
+        // Status
+        if (!string.IsNullOrWhiteSpace(filter.Status))
+        {
+            if (string.Equals(filter.Status, "Active", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e => e.IsActive);
+            }
+            else if (string.Equals(filter.Status, "Inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e => !e.IsActive);
+            }
+        }
+
+        // Department
+        if (filter.DepartmentId.HasValue && filter.DepartmentId.Value > 0)
+        {
+            query = query.Where(e => e.DepartmentId == filter.DepartmentId.Value);
+        }
+
+        // Team
+        if (filter.TeamId.HasValue && filter.TeamId.Value > 0)
+        {
+            query = query.Where(e => e.TeamId == filter.TeamId.Value);
+        }
+
+        // Designation
+        if (filter.DesignationId.HasValue && filter.DesignationId.Value > 0)
+        {
+            query = query.Where(e => e.EmployeeDesignations.Any(ed => ed.DesignationId == filter.DesignationId.Value));
+        }
+
+        // Supervisor
+        if (filter.SupervisorId.HasValue && filter.SupervisorId.Value > 0)
+        {
+            query = query.Where(e => e.SupervisorId == filter.SupervisorId.Value);
+        }
+
+        var totalRecords = await query.CountAsync();
+
+        // Sorting
+        query = (filter.SortBy?.ToLower()) switch
+        {
+            "email" => filter.SortDescending ? query.OrderByDescending(e => e.Email) : query.OrderBy(e => e.Email),
+            "department" => filter.SortDescending ? query.OrderByDescending(e => e.Department != null ? e.Department.Name : "") : query.OrderBy(e => e.Department != null ? e.Department.Name : ""),
+            "team" => filter.SortDescending ? query.OrderByDescending(e => e.Team != null ? e.Team.Name : "") : query.OrderBy(e => e.Team != null ? e.Team.Name : ""),
+            _ => filter.SortDescending ? query.OrderByDescending(e => e.Name) : query.OrderBy(e => e.Name)
+        };
+
+        var page = Math.Max(1, filter.Page);
+        var pageSize = Math.Max(1, filter.PageSize);
+
+        var employees = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new EmployeeListDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Email = e.Email,
+                Department = e.Department != null ? e.Department.Name : "",
+                Team = e.Team != null ? e.Team.Name : "",
+                Designation = e.EmployeeDesignations
+                    .Select(ed => ed.Designation.Name)
+                    .FirstOrDefault() ?? "",
+                Supervisor = e.Supervisor != null ? e.Supervisor.Name : "",
+                IsActive = e.IsActive
+            })
+            .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+        return new EmployeePagedResultDto
+        {
+            Employees = employees,
+            Page = page,
+            PageSize = pageSize,
+            TotalRecords = totalRecords,
+            TotalPages = totalPages
+        };
     }
 
     // GET EMPLOYEE BY ID
     public async Task<EmployeeListDto?> GetEmployeeByIdAsync(int id)
     {
         return await _context.Employees
+            .AsNoTracking()
             .Include(e => e.Department)
             .Include(e => e.Team)
             .Include(e => e.Supervisor)
@@ -203,23 +278,12 @@ public class EmployeeRepository : IEmployeeRepository
                 Id = e.Id,
                 Name = e.Name,
                 Email = e.Email,
-
-                Department = e.Department != null
-                    ? e.Department.Name
-                    : "",
-
-                Team = e.Team != null
-                    ? e.Team.Name
-                    : "",
-
+                Department = e.Department != null ? e.Department.Name : "",
+                Team = e.Team != null ? e.Team.Name : "",
                 Designation = e.EmployeeDesignations
                     .Select(ed => ed.Designation.Name)
                     .FirstOrDefault() ?? "",
-
-                Supervisor = e.Supervisor != null
-                    ? e.Supervisor.Name
-                    : "",
-
+                Supervisor = e.Supervisor != null ? e.Supervisor.Name : "",
                 IsActive = e.IsActive
             })
             .FirstOrDefaultAsync();
@@ -238,7 +302,6 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check whether email is already used by another user
         var emailExists = await _context.AppUsers
             .AnyAsync(u =>
                 u.Email == dto.Email &&
@@ -249,7 +312,14 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check department
+        var designation = await _context.Designations
+            .FirstOrDefaultAsync(d => d.Id == dto.DesignationId);
+
+        if (designation == null)
+        {
+            return false;
+        }
+
         if (dto.DepartmentId.HasValue)
         {
             var departmentExists = await _context.Departments
@@ -261,7 +331,6 @@ public class EmployeeRepository : IEmployeeRepository
             }
         }
 
-        // Check team
         if (dto.TeamId.HasValue)
         {
             var team = await _context.Teams
@@ -272,7 +341,6 @@ public class EmployeeRepository : IEmployeeRepository
                 return false;
             }
 
-            // Make sure team belongs to selected department
             if (dto.DepartmentId.HasValue &&
                 team.DepartmentId != dto.DepartmentId.Value)
             {
@@ -280,42 +348,37 @@ public class EmployeeRepository : IEmployeeRepository
             }
         }
 
-        // Check designation
-        var designationExists = await _context.Designations
-            .AnyAsync(d => d.Id == dto.DesignationId);
+        var appUser = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
 
-        if (!designationExists)
+        if (appUser == null)
         {
             return false;
         }
 
-        // Update Employee
         employee.Name = dto.Name;
         employee.Email = dto.Email;
         employee.DepartmentId = dto.DepartmentId;
         employee.TeamId = dto.TeamId;
         employee.SupervisorId = dto.SupervisorId;
 
-        // Update AppUser email
-        var appUser = await _context.AppUsers
-            .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
+        appUser.Email = dto.Email;
 
-        if (appUser != null)
+        var existingDesignations = await _context.EmployeeDesignations
+            .Where(ed => ed.EmployeeId == id)
+            .ToListAsync();
+
+        _context.EmployeeDesignations.RemoveRange(existingDesignations);
+
+        var newDesignation = new EmployeeDesignation
         {
-            appUser.Email = dto.Email;
-        }
+            EmployeeId = id,
+            DesignationId = dto.DesignationId
+        };
 
-        // Update designation
-        var employeeDesignation = await _context.EmployeeDesignations
-            .FirstOrDefaultAsync(ed => ed.EmployeeId == employee.Id);
-
-        if (employeeDesignation != null)
-        {
-            employeeDesignation.DesignationId = dto.DesignationId;
-        }
+        _context.EmployeeDesignations.Add(newDesignation);
 
         await _context.SaveChangesAsync();
-
         return true;
     }
 
@@ -333,29 +396,36 @@ public class EmployeeRepository : IEmployeeRepository
         var appUser = await _context.AppUsers
             .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
 
-        var employeeDesignation = await _context.EmployeeDesignations
-            .Where(ed => ed.EmployeeId == employee.Id)
-            .ToListAsync();
-
-        _context.EmployeeDesignations.RemoveRange(employeeDesignation);
-
-        _context.Employees.Remove(employee);
-
-        if (appUser != null)
+        if (appUser == null)
         {
-            _context.AppUsers.Remove(appUser);
+            return false;
         }
 
-        await _context.SaveChangesAsync();
+        // Remove employee's designations
+        var employeeDesignations = await _context.EmployeeDesignations
+            .Where(ed => ed.EmployeeId == id)
+            .ToListAsync();
 
+        _context.EmployeeDesignations.RemoveRange(employeeDesignations);
+
+        // Remove employee's user roles
+        var userRoles = await _context.UserRoles
+            .Where(ur => ur.UserId == appUser.Id)
+            .ToListAsync();
+
+        _context.UserRoles.RemoveRange(userRoles);
+
+        _context.Employees.Remove(employee);
+        _context.AppUsers.Remove(appUser);
+
+        await _context.SaveChangesAsync();
         return true;
     }
 
     // GET EMPLOYEE COUNT
     public async Task<int> GetEmployeeCountAsync()
     {
-        return await _context.Employees
-            .CountAsync(e => e.IsActive);
+        return await _context.Employees.CountAsync();
     }
 
     // UPDATE EMPLOYEE STATUS
@@ -371,24 +441,26 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        employee.IsActive = dto.IsActive;
-
         var appUser = await _context.AppUsers
             .FirstOrDefaultAsync(u => u.Id == employee.AppUserId);
 
-        if (appUser != null)
+        if (appUser == null)
         {
-            appUser.IsActive = dto.IsActive;
+            return false;
         }
 
+        employee.IsActive = dto.IsActive;
+        appUser.IsActive = dto.IsActive;
+
         await _context.SaveChangesAsync();
-
         return true;
-
     }
+
+    // GET MY PROFILE
     public async Task<EmployeeListDto?> GetMyProfileAsync(int userId)
     {
         return await _context.Employees
+            .AsNoTracking()
             .Include(e => e.Department)
             .Include(e => e.Team)
             .Include(e => e.Supervisor)
@@ -400,33 +472,22 @@ public class EmployeeRepository : IEmployeeRepository
                 Id = e.Id,
                 Name = e.Name,
                 Email = e.Email,
-
-                Department = e.Department != null
-                    ? e.Department.Name
-                    : "",
-
-                Team = e.Team != null
-                    ? e.Team.Name
-                    : "",
-
+                Department = e.Department != null ? e.Department.Name : "",
+                Team = e.Team != null ? e.Team.Name : "",
                 Designation = e.EmployeeDesignations
                     .Select(ed => ed.Designation.Name)
                     .FirstOrDefault() ?? "",
-
-                Supervisor = e.Supervisor != null
-                    ? e.Supervisor.Name
-                    : "",
-
+                Supervisor = e.Supervisor != null ? e.Supervisor.Name : "",
                 IsActive = e.IsActive
             })
             .FirstOrDefaultAsync();
     }
 
+    // UPDATE MY PROFILE
     public async Task<bool> UpdateMyProfileAsync(
-    int userId,
-    UpdateMyProfileDto dto)
+        int userId,
+        UpdateMyProfileDto dto)
     {
-        // Find the employee using the logged-in user's ID
         var employee = await _context.Employees
             .FirstOrDefaultAsync(e => e.AppUserId == userId);
 
@@ -435,18 +496,14 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Check whether another user already has this email
         var emailExists = await _context.AppUsers
-            .AnyAsync(u =>
-                u.Email == dto.Email &&
-                u.Id != userId);
+            .AnyAsync(u => u.Email == dto.Email && u.Id != userId);
 
         if (emailExists)
         {
             return false;
         }
 
-        // Find the related AppUser
         var appUser = await _context.AppUsers
             .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -455,15 +512,145 @@ public class EmployeeRepository : IEmployeeRepository
             return false;
         }
 
-        // Update employee information
         employee.Name = dto.Name;
         employee.Email = dto.Email;
-
-        // Keep AppUser email synchronized
         appUser.Email = dto.Email;
 
         await _context.SaveChangesAsync();
-
         return true;
+    }
+
+    // UPDATE EMPLOYEE DEPARTMENT
+    public async Task<bool> UpdateEmployeeDepartmentAsync(int id, UpdateEmployeeDepartmentDto dto)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return false;
+
+        if (dto.DepartmentId.HasValue)
+        {
+            var exists = await _context.Departments.AnyAsync(d => d.Id == dto.DepartmentId.Value);
+            if (!exists) return false;
+        }
+
+        employee.DepartmentId = dto.DepartmentId;
+        // If team assigned does not belong to new department, clear it
+        if (employee.TeamId.HasValue && dto.DepartmentId.HasValue)
+        {
+            var teamMatches = await _context.Teams.AnyAsync(t => t.Id == employee.TeamId.Value && t.DepartmentId == dto.DepartmentId.Value);
+            if (!teamMatches) employee.TeamId = null;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // UPDATE EMPLOYEE TEAM
+    public async Task<bool> UpdateEmployeeTeamAsync(int id, UpdateEmployeeTeamDto dto)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return false;
+
+        if (dto.TeamId.HasValue)
+        {
+            var team = await _context.Teams.FindAsync(dto.TeamId.Value);
+            if (team == null) return false;
+
+            if (employee.DepartmentId.HasValue && team.DepartmentId != employee.DepartmentId.Value)
+            {
+                return false;
+            }
+        }
+
+        employee.TeamId = dto.TeamId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // UPDATE EMPLOYEE SUPERVISOR
+    public async Task<bool> UpdateEmployeeSupervisorAsync(int id, UpdateEmployeeSupervisorDto dto)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return false;
+
+        if (dto.SupervisorId.HasValue)
+        {
+            if (dto.SupervisorId.Value == id) return false; // Prevent self supervision
+
+            var exists = await _context.Employees.AnyAsync(e => e.Id == dto.SupervisorId.Value);
+            if (!exists) return false;
+        }
+
+        employee.SupervisorId = dto.SupervisorId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // UPDATE EMPLOYEE DESIGNATION
+    public async Task<bool> UpdateEmployeeDesignationAsync(int id, UpdateEmployeeDesignationDto dto)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return false;
+
+        var desigExists = await _context.Designations.AnyAsync(d => d.Id == dto.DesignationId);
+        if (!desigExists) return false;
+
+        var existing = await _context.EmployeeDesignations.Where(ed => ed.EmployeeId == id).ToListAsync();
+        _context.EmployeeDesignations.RemoveRange(existing);
+
+        _context.EmployeeDesignations.Add(new EmployeeDesignation
+        {
+            EmployeeId = id,
+            DesignationId = dto.DesignationId
+        });
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // GET SUBORDINATES
+    public async Task<List<EmployeeSubordinateDto>> GetSubordinatesAsync(int employeeId)
+    {
+        return await _context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Include(e => e.Team)
+            .Include(e => e.EmployeeDesignations).ThenInclude(ed => ed.Designation)
+            .Where(e => e.SupervisorId == employeeId)
+            .Select(e => new EmployeeSubordinateDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Email = e.Email,
+                Department = e.Department != null ? e.Department.Name : "",
+                Team = e.Team != null ? e.Team.Name : "",
+                Designation = e.EmployeeDesignations.Select(ed => ed.Designation.Name).FirstOrDefault() ?? "",
+                IsActive = e.IsActive
+            })
+            .ToListAsync();
+    }
+
+    // GET SUPERVISOR
+    public async Task<EmployeeSupervisorDto?> GetSupervisorAsync(int employeeId)
+    {
+        var employee = await _context.Employees.FindAsync(employeeId);
+        if (employee == null || !employee.SupervisorId.HasValue) return null;
+
+        return await _context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Include(e => e.Team)
+            .Include(e => e.EmployeeDesignations).ThenInclude(ed => ed.Designation)
+            .Where(e => e.Id == employee.SupervisorId.Value)
+            .Select(e => new EmployeeSupervisorDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Email = e.Email,
+                Department = e.Department != null ? e.Department.Name : "",
+                Team = e.Team != null ? e.Team.Name : "",
+                Designation = e.EmployeeDesignations.Select(ed => ed.Designation.Name).FirstOrDefault() ?? "",
+                IsActive = e.IsActive
+            })
+            .FirstOrDefaultAsync();
     }
 }

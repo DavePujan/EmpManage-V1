@@ -270,4 +270,13 @@ public class LeaveController : ControllerBase
 
         return Ok("Leave cancelled successfully.");
     }
+
+    // SEARCH / FILTER LEAVES
+    [HttpPost("search")]
+    [Authorize(Roles = "Manager,HR,Admin")]
+    public async Task<IActionResult> SearchLeaves([FromBody] LeaveFilterDto filter)
+    {
+        var result = await _leaveService.SearchLeavesAsync(filter);
+        return Ok(result);
+    }
 }

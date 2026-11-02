@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CreateLeaveRequest, LeaveResponse, RejectLeaveRequest } from '../core/models/leave.models';
+import { CreateLeaveRequest, LeaveFilter, LeavePagedResult, LeaveResponse, RejectLeaveRequest } from '../core/models/leave.models';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,11 @@ export class LeaveApiService {
   // Manager + HR + Admin: Get all leaves
   getAll(): Observable<LeaveResponse[]> {
     return this.http.get<LeaveResponse[]>(`${this.baseUrl}/all`);
+  }
+
+  // Manager + HR + Admin: Search / Filter leaves
+  search(filter: LeaveFilter): Observable<LeavePagedResult> {
+    return this.http.post<LeavePagedResult>(`${this.baseUrl}/search`, filter);
   }
 
   // Manager + HR + Admin: Get pending leaves

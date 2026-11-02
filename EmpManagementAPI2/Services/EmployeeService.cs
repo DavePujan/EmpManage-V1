@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.DTOs.Employee;
+using EmpManagementAPI2.DTOs.Employee;
 using EmpManagementAPI2.Interfaces;
 
 namespace EmpManagementAPI2.Services;
@@ -15,10 +15,6 @@ public class EmployeeService : IEmployeeService
         _employeeRepository = employeeRepository;
         _emailService = emailService;
     }
-
-
-   
-
 
     // CREATE EMPLOYEE
     public async Task<bool> CreateEmployeeAsync(CreateEmployeeDto dto)
@@ -45,6 +41,12 @@ public class EmployeeService : IEmployeeService
     public async Task<List<EmployeeListDto>> GetAllEmployeesAsync()
     {
         return await _employeeRepository.GetAllEmployeesAsync();
+    }
+
+    // SEARCH / PAGED EMPLOYEES
+    public async Task<EmployeePagedResultDto> SearchEmployeesAsync(EmployeeFilterDto filter)
+    {
+        return await _employeeRepository.SearchEmployeesAsync(filter);
     }
 
     // GET EMPLOYEE BY ID
@@ -80,7 +82,6 @@ public class EmployeeService : IEmployeeService
     private string GenerateTemporaryPassword()
     {
         return $"Emp@{Random.Shared.Next(100000, 999999)}";
-
     }
 
     // UPDATE EMPLOYEE STATUS
@@ -91,18 +92,63 @@ public class EmployeeService : IEmployeeService
         return await _employeeRepository
             .UpdateEmployeeStatusAsync(id, dto);
     }
-    //employee apni profile  details  dekh payega
+
+    // GET MY PROFILE
     public async Task<EmployeeListDto?> GetMyProfileAsync(int userId)
     {
         return await _employeeRepository.GetMyProfileAsync(userId);
     }
 
-    //employee apnaprofile edit kar sakta he
+    // UPDATE MY PROFILE
     public async Task<bool> UpdateMyProfileAsync(
-    int userId,
-    UpdateMyProfileDto dto)
+        int userId,
+        UpdateMyProfileDto dto)
     {
         return await _employeeRepository
             .UpdateMyProfileAsync(userId, dto);
+    }
+
+    // UPDATE EMPLOYEE DEPARTMENT
+    public async Task<bool> UpdateEmployeeDepartmentAsync(
+        int id,
+        UpdateEmployeeDepartmentDto dto)
+    {
+        return await _employeeRepository.UpdateEmployeeDepartmentAsync(id, dto);
+    }
+
+    // UPDATE EMPLOYEE TEAM
+    public async Task<bool> UpdateEmployeeTeamAsync(
+        int id,
+        UpdateEmployeeTeamDto dto)
+    {
+        return await _employeeRepository.UpdateEmployeeTeamAsync(id, dto);
+    }
+
+    // UPDATE EMPLOYEE SUPERVISOR
+    public async Task<bool> UpdateEmployeeSupervisorAsync(
+        int id,
+        UpdateEmployeeSupervisorDto dto)
+    {
+        return await _employeeRepository.UpdateEmployeeSupervisorAsync(id, dto);
+    }
+
+    // UPDATE EMPLOYEE DESIGNATION
+    public async Task<bool> UpdateEmployeeDesignationAsync(
+        int id,
+        UpdateEmployeeDesignationDto dto)
+    {
+        return await _employeeRepository.UpdateEmployeeDesignationAsync(id, dto);
+    }
+
+    // GET SUBORDINATES
+    public async Task<List<EmployeeSubordinateDto>> GetSubordinatesAsync(int employeeId)
+    {
+        return await _employeeRepository.GetSubordinatesAsync(employeeId);
+    }
+
+    // GET SUPERVISOR
+    public async Task<EmployeeSupervisorDto?> GetSupervisorAsync(int employeeId)
+    {
+        return await _employeeRepository.GetSupervisorAsync(employeeId);
     }
 }

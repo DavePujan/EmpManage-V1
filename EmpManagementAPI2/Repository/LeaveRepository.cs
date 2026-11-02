@@ -334,4 +334,98 @@ public class LeaveRepository : ILeaveRepository
 
         return true;
     }
+    // SEARCH / FILTER LEAVES
+    public async Task<LeavePagedResultDto> SearchLeavesAsync(LeaveFilterDto filter)
+    {
+        var query = _context.LeaveRequests
+            .AsNoTracking()
+            .Include(l => l.Employee)
+            .Include(l => l.Team)
+            .Include(l => l.ApprovedByEmployee)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var search = filter.Search.Trim().ToLower();
+            query = query.Where(l => l.Employee.Name.ToLower().Contains(search) || l.Reason.ToLower().Contains(search));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Status))
+        {
+            query = query.Where(l => l.Status == filter.Status);
+        }
+
+        if (filter.EmployeeId.HasValue && filter.EmployeeId.Value > 0)
+        {
+            query = query.Where(l => l.EmployeeId == filter.EmployeeId.Value);
+        }
+
+        if (filter.TeamId.HasValue && filter.TeamId.Value > 0)
+        {
+            query = query.Where(l => l.TeamId == filter.TeamId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.LeaveType))
+        {
+            query = query.Where(l => l.LeaveType == filter.LeaveType);
+        }
+
+        if (filter.FromDate.HasValue)
+        {
+            query = query.Where(l => l.StartDate >= filter.FromDate.Value);
+        }
+
+        if (filter.ToDate.HasValue)
+        {
+            query = query.Where(l => l.EndDate <= filter.ToDate.Value);
+        }
+
+        var totalRecords = await query.CountAsync();
+
+        query = (filter.SortBy?.ToLower()) switch
+        {
+            "startdate" => filter.SortDescending ? query.OrderByDescending(l => l.StartDate) : query.OrderBy(l => l.StartDate),
+            "enddate" => filter.SortDescending ? query.OrderByDescending(l => l.EndDate) : query.OrderBy(l => l.EndDate),
+            "employee" => filter.SortDescending ? query.OrderByDescending(l => l.Employee.Name) : query.OrderBy(l => l.Employee.Name),
+            "status" => filter.SortDescending ? query.OrderByDescending(l => l.Status) : query.OrderBy(l => l.Status),
+            _ => filter.SortDescending ? query.OrderByDescending(l => l.CreatedAt) : query.OrderBy(l => l.CreatedAt)
+        };
+
+        var page = Math.Max(1, filter.Page);
+        var pageSize = Math.Max(1, filter.PageSize);
+
+        var leaves = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(l => new LeaveResponseDto
+            {
+                Id = l.Id,
+                EmployeeId = l.EmployeeId,
+                EmployeeName = l.Employee.Name,
+                LeaveType = l.LeaveType,
+                Reason = l.Reason,
+                StartDate = l.StartDate,
+                EndDate = l.EndDate,
+                Status = l.Status,
+                IsTeamLeave = l.IsTeamLeave,
+                TeamId = l.TeamId,
+                TeamName = l.Team != null ? l.Team.Name : "",
+                ApprovedBy = l.ApprovedBy,
+                ApprovedByName = l.ApprovedByEmployee != null ? l.ApprovedByEmployee.Name : "",
+                ApprovedDate = l.ApprovedDate,
+                CreatedAt = l.CreatedAt
+            })
+            .ToListAsync();
+
+        var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+        return new LeavePagedResultDto
+        {
+            Leaves = leaves,
+            Page = page,
+            PageSize = pageSize,
+            TotalRecords = totalRecords,
+            TotalPages = totalPages
+        };
+    }
 }

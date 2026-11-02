@@ -134,4 +134,9 @@ public class LeaveService : ILeaveService
         return await _leaveRepository
             .CancelLeaveAsync(leaveId, userId);
     }
+
+    public async Task<LeavePagedResultDto> SearchLeavesAsync(LeaveFilterDto filter)
+    {
+        return await _leaveRepository.SearchLeavesAsync(filter);
+    }
 }

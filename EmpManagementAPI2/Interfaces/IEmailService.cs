@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.DTOs.Leave;
+using EmpManagementAPI2.DTOs.Leave;
 
 namespace EmpManagementAPI2.Interfaces;
 
@@ -17,4 +17,8 @@ public interface IEmailService
 
     Task SendLeaveRejectedEmailAsync(
         LeaveResponseDto leave);
+
+    Task SendPasswordResetEmailAsync(
+        string email,
+        string temporaryPassword);
 }

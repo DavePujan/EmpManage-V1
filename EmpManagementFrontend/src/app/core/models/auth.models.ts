@@ -14,6 +14,10 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
 export interface InitialAdminRequest {
   username: string;
   email: string;

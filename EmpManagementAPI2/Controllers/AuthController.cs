@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.DTOs.Auth;
+using EmpManagementAPI2.DTOs.Auth;
 using EmpManagementAPI2.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -57,5 +57,13 @@ public class AuthController : ControllerBase
         }
 
         return Ok("Password changed successfully.");
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordDto dto)
+    {
+        await _authService.ForgotPasswordAsync(dto);
+
+        return Ok("If an account with this email exists, a temporary password has been sent.");
     }
 }

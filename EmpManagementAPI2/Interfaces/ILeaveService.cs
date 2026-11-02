@@ -1,4 +1,4 @@
-﻿using EmpManagementAPI2.DTOs.Leave;
+using EmpManagementAPI2.DTOs.Leave;
 
 namespace EmpManagementAPI2.Interfaces;
 
@@ -34,4 +34,6 @@ public interface ILeaveService
         int appUserId);
 
     Task<bool> CancelLeaveAsync(int leaveId, int userId);
+
+    Task<LeavePagedResultDto> SearchLeavesAsync(LeaveFilterDto filter);
 }

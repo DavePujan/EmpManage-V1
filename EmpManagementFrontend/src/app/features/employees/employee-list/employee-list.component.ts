@@ -11,7 +11,7 @@ import { TeamApiService } from '../../../api/team-api.service';
 import { DepartmentListItem } from '../../../core/models/department.models';
 import { DesignationItem } from '../../../core/models/designation.models';
 import { TeamListItem } from '../../../core/models/team.models';
-import { EmployeeListItem } from '../../../core/models/user.models';
+import { EmployeeListItem, EmployeeSubordinate } from '../../../core/models/user.models';
 import { AuthStateService } from '../../../core/services/auth-state.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
@@ -44,7 +44,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
           <p class="page-description">Manage staff profiles, department assignments, designations, and supervisory hierarchy.</p>
         </div>
 
-        @if (authState.isAdmin()) {
+        @if (canManage()) {
           <div class="page-actions">
             <button class="btn btn-primary" (click)="openAddModal()">
               <app-icon name="plus" [size]="18"></app-icon>
@@ -174,7 +174,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                           <app-icon name="eye" [size]="16"></app-icon>
                         </button>
 
-                        @if (authState.isAdmin()) {
+                        @if (canManage()) {
                           <!-- Edit -->
                           <button class="btn btn-icon btn-ghost btn-icon-sm" (click)="openEditModal(emp)" title="Edit Employee">
                             <app-icon name="edit" [size]="16"></app-icon>
@@ -460,6 +460,30 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                 <span class="detail-val">{{ selectedEmployee.supervisor || 'None' }}</span>
               </div>
             </div>
+
+            <!-- Subordinates Hierarchy -->
+            <div class="mt-4 pt-3" style="border-top: 1px solid var(--color-border);">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-semibold text-xs">Direct Reports ({{ subordinates.length }})</span>
+              </div>
+              @if (isLoadingSubordinates) {
+                <p class="text-caption text-muted">Loading reporting hierarchy...</p>
+              } @else if (subordinates.length === 0) {
+                <p class="text-caption text-muted">No direct reports.</p>
+              } @else {
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+                  @for (sub of subordinates; track sub.id) {
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--color-bg); border-radius: var(--radius-sm); font-size: 12.5px;">
+                      <div>
+                        <span class="font-medium">{{ sub.name }}</span>
+                        <span class="text-muted text-xs ml-2">({{ sub.designation || 'Staff' }})</span>
+                      </div>
+                      <app-status-badge [status]="sub.isActive"></app-status-badge>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="isViewModalOpen = false">Close</button>
@@ -554,6 +578,12 @@ export class EmployeeListComponent implements OnInit {
   Math = Math;
 
   allEmployees: EmployeeListItem[] = [];
+  subordinates: EmployeeSubordinate[] = [];
+  isLoadingSubordinates = false;
+
+  canManage(): boolean {
+    return this.authState.isAdmin() || this.authState.isHR();
+  }
   filteredEmployees: EmployeeListItem[] = [];
   departments: DepartmentListItem[] = [];
   designations: DesignationItem[] = [];
@@ -776,7 +806,20 @@ export class EmployeeListComponent implements OnInit {
 
   openViewModal(emp: EmployeeListItem): void {
     this.selectedEmployee = emp;
+    this.subordinates = [];
+    this.isLoadingSubordinates = true;
     this.isViewModalOpen = true;
+    this.employeeApi.getSubordinates(emp.id).subscribe({
+      next: (subs) => {
+        this.subordinates = subs;
+        this.isLoadingSubordinates = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isLoadingSubordinates = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   openDeleteDialog(emp: EmployeeListItem): void {

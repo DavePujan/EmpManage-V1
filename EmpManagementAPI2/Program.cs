@@ -1,4 +1,4 @@
-using EmpManagementAPI2.Data;
+﻿using EmpManagementAPI2.Data;
 using EmpManagementAPI2.Interfaces;
 using EmpManagementAPI2.Repository;
 using EmpManagementAPI2.Services;
@@ -90,6 +90,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 var app = builder.Build();
+app.UseMiddleware<EmpManagementAPI2.Middleware.GlobalExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 

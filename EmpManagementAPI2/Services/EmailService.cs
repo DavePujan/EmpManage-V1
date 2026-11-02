@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Mail;
 using EmpManagementAPI2.Data;
 using EmpManagementAPI2.DTOs.Leave;
@@ -59,7 +59,7 @@ public class EmailService : IEmailService
 
 
     // =========================================================
-    // NEW LEAVE REQUEST → HR
+    // NEW LEAVE REQUEST â†’ HR
     // =========================================================
 
     public async Task SendLeaveRequestNotificationAsync(
@@ -136,7 +136,7 @@ public class EmailService : IEmailService
 
 
     // =========================================================
-    // LEAVE APPROVED → EMPLOYEE
+    // LEAVE APPROVED â†’ EMPLOYEE
     // =========================================================
 
     public async Task SendLeaveApprovedEmailAsync(
@@ -196,7 +196,7 @@ public class EmailService : IEmailService
 
 
     // =========================================================
-    // LEAVE REJECTED → EMPLOYEE
+    // LEAVE REJECTED â†’ EMPLOYEE
     // =========================================================
 
     public async Task SendLeaveRejectedEmailAsync(
@@ -256,6 +256,41 @@ public class EmailService : IEmailService
             employeeEmail,
             subject,
             body);
+    }
+
+
+    // =========================================================
+    // GET EMPLOYEE EMAIL
+    // =========================================================
+
+    // =========================================================
+    // PASSWORD RESET
+    // =========================================================
+
+    public async Task SendPasswordResetEmailAsync(
+        string email,
+        string temporaryPassword)
+    {
+        var subject = "Employee Management System - Temporary Password";
+
+        var body = $"""
+            <h2>Password Reset</h2>
+
+            <p>We received a request to reset your password.</p>
+
+            <p>Your temporary password is:</p>
+
+            <p><strong>{temporaryPassword}</strong></p>
+
+            <p>You can use this temporary password to log in to the Employee Management System. Please change your password after logging in.</p>
+
+            <p>
+                Regards,<br/>
+                Employee Management System
+            </p>
+            """;
+
+        await SendEmailAsync(email, subject, body);
     }
 
 
